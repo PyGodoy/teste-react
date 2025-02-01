@@ -1,5 +1,7 @@
 import React from 'react';
 import { useAuthStore } from '../store/authStore';
+import ProfessorDashboard from './DashboardTeacher';
+import AlunoDashboard from './DashboardAluno';
 
 export default function Dashboard() {
   const { user, signOut } = useAuthStore();
@@ -28,13 +30,11 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {user?.role === 'professor' ? (
           <div>
-            <h2 className="text-2xl font-bold mb-4">Área do Professor</h2>
-            {/* Implementar interface do professor */}
+            {<ProfessorDashboard/>}
           </div>
         ) : (
           <div>
-            <h2 className="text-2xl font-bold mb-4">Área do Aluno</h2>
-            {/* Implementar interface do aluno */}
+            {<AlunoDashboard/>}
           </div>
         )}
       </main>

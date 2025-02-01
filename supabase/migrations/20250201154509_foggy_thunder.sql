@@ -126,3 +126,13 @@ AND p1.created_at < p2.max_date;
 -- Adicionar uma constraint única para prevenir duplicatas futuras
 ALTER TABLE profiles
 ADD CONSTRAINT unique_profile_id UNIQUE (id);
+
+-- Ative a RLS se ainda não estiver ativa
+ALTER TABLE trainings ENABLE ROW LEVEL SECURITY;
+
+-- Crie uma política que permita ao professor inserir novos treinos
+CREATE POLICY "Allow insert for professors" 
+ON trainings 
+FOR INSERT 
+TO public 
+USING (auth.uid() IS NOT NULL AND auth.uid() = professor_id);

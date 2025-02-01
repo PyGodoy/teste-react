@@ -136,3 +136,4 @@ ON trainings
 FOR INSERT 
 TO public 
 USING (auth.uid() IS NOT NULL AND auth.uid() = professor_id);
+

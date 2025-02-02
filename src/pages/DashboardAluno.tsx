@@ -34,7 +34,7 @@ export default function AlunoDashboard() {
     fetchTrainings();
   }, []);
 
-  // Função para agrupar treinos por semana
+  // Função para agrupar treinos por semana toda
   const groupTrainingsByWeek = (trainings: Training[]) => {
     const grouped: Record<string, Training[]> = {};
 

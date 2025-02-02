@@ -88,17 +88,19 @@ export default function ProfessorDashboard() {
   // Cadastrar novo treino
   const handleCreateTraining = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
     const { data, error } = await supabase
       .from('trainings')
-      .insert([{ ...newTraining, professor_id: user?.id }]);
-
+      .insert([{ ...newTraining, professor_id: user?.id }])
+      .select(); // Add .select() to ensure data is returned with the correct type
+  
     if (error) {
       console.error('Erro ao criar treino:', error);
     } else {
-      if (data && data.length > 0) {
+      if (data && data.length > 0) { // TypeScript can now infer the type of data correctly
         setTrainings([...trainings, data[0] as Training]);
       }
-
+  
       setNewTraining({
         title: '',
         description: '',

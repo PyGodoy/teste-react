@@ -372,7 +372,7 @@ export default function ProfessorDashboard() {
 
       <div className="max-w-7xl mx-auto mb-8">
         <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
+          <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto whitespace-nowrap">
             <button
               onClick={() => setActiveTab('trainings')}
               className={`${

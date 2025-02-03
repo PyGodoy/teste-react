@@ -37,9 +37,27 @@ interface PerformanceData {
   displayTime: string;
 }
 
+interface Class {
+  id: number;
+  professor_id: string;
+  title: string;
+  date: string;
+  time: string;
+  duration: number;
+  max_students: number;
+  created_at: string;
+  professor: {
+    name: string;
+  };
+  class_checkins: {
+    student_id: string;
+  }[];
+}
+
 // Adicione aqui os novos tipos
 type PeriodFilter = 'all' | 'week' | 'month' | 'custom';
 type AverageView = 'daily' | 'weekly' | 'monthly';
+type ActiveTab = 'trainings' | 'times' | 'performance' | 'checkin';
 
 export default function AlunoDashboard() {
   const { user } = useAuthStore();
@@ -47,7 +65,8 @@ export default function AlunoDashboard() {
   const [expandedWeeks, setExpandedWeeks] = useState<string[]>([]);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'trainings' | 'times' | 'performance'>('trainings');
+  const [activeTab, setActiveTab] = useState<'trainings' | 'times' | 'performance' | 'checkin'>('trainings')
+  const [classes, setClasses] = useState<Class[]>([]);
   const [completionForm, setCompletionForm] = useState<CompletionForm>({
     trainingId: null,
     professorId: null,
@@ -63,6 +82,75 @@ export default function AlunoDashboard() {
     startDate: '',
     endDate: ''
   });
+
+  const fetchClasses = async () => {
+    // Pega a data atual no fuso horário local
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+  
+    const { data, error } = await supabase
+      .from('classes')
+      .select(`
+        *,
+        class_checkins (
+          id,
+          student_id,
+          checked_in_at
+        )
+      `)
+      .gte('date', formattedDate) // Pega apenas aulas de hoje em diante
+      .order('date', { ascending: true })
+      .order('time', { ascending: true });
+  
+    if (error) {
+      console.error('Erro ao buscar aulas:', error);
+      return;
+    } else {
+      setClasses(data as Class[]);
+    }
+  };
+  
+  // Adicione a função de check-in
+  const handleCheckin = async (classId: number) => {
+    // Verificar se já fez check-in
+    const existingCheckin = await supabase
+      .from('class_checkins')
+      .select('*')
+      .eq('class_id', classId)
+      .eq('student_id', user?.id)
+      .single();
+  
+    if (existingCheckin.data) {
+      alert('Você já fez check-in nesta aula!');
+      return;
+    }
+  
+    const { error } = await supabase
+      .from('class_checkins')
+      .insert([
+        {
+          class_id: classId,
+          student_id: user?.id,
+        }
+      ]);
+  
+    if (error) {
+      console.error('Erro ao fazer check-in:', error);
+      alert('Erro ao fazer check-in');
+    } else {
+      alert('Check-in realizado com sucesso!');
+      fetchClasses();
+    }
+  };
+  
+  // Atualize o useEffect existente para incluir fetchClasses
+  useEffect(() => {
+    if (user) {
+      fetchTrainings();
+      fetchPerformanceData();
+      fetchClasses(); // Adicione esta linha
+    }
+  }, [user]);
 
   useEffect(() => {
     const checkAuthorization = async () => {
@@ -391,6 +479,16 @@ const handleCompleteTraining = async () => {
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
             >
               Desempenho
+            </button>
+            <button
+              onClick={() => setActiveTab('checkin')}
+              className={`${
+                activeTab === 'checkin'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Check-in
             </button>
           </nav>
         </div>
@@ -736,6 +834,107 @@ const handleCompleteTraining = async () => {
                 Confirmar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {activeTab === 'checkin' && (
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-2xl font-bold mb-6 text-gray-800">Aulas Disponíveis</h2>
+          <div className="space-y-4">
+            {classes.map((class_) => {
+              const classDate = new Date(`${class_.date}T${class_.time}`);
+              const now = new Date();
+              const isActive = now >= new Date(classDate.getTime() - 60 * 60 * 1000) && 
+                            now <= new Date(classDate.getTime() + class_.duration * 60 * 1000);
+              const hasCheckedIn = class_.class_checkins?.some(
+                checkin => checkin.student_id === user?.id
+              );
+              const isFull = class_.class_checkins?.length >= class_.max_students;
+
+              return (
+                <div
+                  key={class_.id}
+                  className={`bg-white p-6 rounded-lg shadow-md ${
+                    isActive ? 'border-2 border-green-500' : ''
+                  }`}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-bold text-xl text-blue-600 mb-2">{class_.title}</h3>
+                      <p className="text-gray-600 mb-1">
+                        Professor: {class_.professor?.name}
+                      </p>
+                      <p className="text-gray-600 mb-1">
+                        Data: {new Date(class_.date).toLocaleDateString()}
+                      </p>
+                      <p className="text-gray-600 mb-1">
+                        Horário: {class_.time}
+                      </p>
+                      <p className="text-gray-600 mb-1">
+                        Duração: {class_.duration} minutos
+                      </p>
+                      <p className="text-gray-600">
+                        Vagas: {class_.class_checkins?.length || 0}/{class_.max_students}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end space-y-2">
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          isActive
+                            ? 'bg-green-100 text-green-800'
+                            : classDate < now
+                            ? 'bg-gray-100 text-gray-800'
+                            : 'bg-blue-100 text-blue-800'
+                        }`}
+                      >
+                        {isActive 
+                          ? 'Em andamento' 
+                          : classDate < now 
+                          ? 'Encerrada'
+                          : 'Agendada'}
+                      </span>
+                      {hasCheckedIn ? (
+                        <span className="text-green-600 font-medium">
+                          ✓ Check-in realizado
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleCheckin(class_.id)}
+                          disabled={!isActive || isFull || classDate < now}
+                          className={`px-4 py-2 rounded-lg text-white font-medium ${
+                            isActive && !isFull && classDate >= now
+                              ? 'bg-blue-500 hover:bg-blue-600'
+                              : 'bg-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          {isFull 
+                            ? 'Aula lotada' 
+                            : classDate < now 
+                            ? 'Aula encerrada'
+                            : !isActive 
+                            ? 'Aguardando início' 
+                            : 'Fazer Check-in'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {hasCheckedIn && (
+                    <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                      <p className="text-green-700">
+                        Você já está confirmado nesta aula. Não se esqueça de comparecer no horário!
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {classes.length === 0 && (
+              <div className="bg-white p-6 rounded-lg shadow-md text-center">
+                <p className="text-gray-600">
+                  Nenhuma aula disponível no momento.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}

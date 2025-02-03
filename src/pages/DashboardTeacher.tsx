@@ -26,12 +26,46 @@ interface AttendanceRecord {
   };
 }
 
+// Primeiro, defina as interfaces necessárias
+interface UserInfo {
+  id: string;
+  email: string;
+  name: string;
+}
+
+interface Checkin {
+  id: number;
+  student_id: string;
+  checked_in_at: string;
+  student: UserInfo;
+}
+
+interface ClassCheckinRaw {
+  id: number;
+  student_id: string;
+  checked_in_at: string;
+}
+
+interface Class {
+  id: number;
+  professor_id: string;
+  title: string;
+  date: string;
+  time: string;
+  duration: number;
+  max_students: number;
+  created_at: string;
+  professor: UserInfo;
+  class_checkins: Checkin[];
+}
+
+
 export default function ProfessorDashboard() {
   const { user } = useAuthStore();
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [students, setStudents] = useState<StudentProfile[]>([]);
-  const [activeTab, setActiveTab] = useState<'trainings' | 'students' | 'attendance'>('trainings');
+  const [activeTab, setActiveTab] = useState<'trainings' | 'students' | 'attendance' | 'classes'>('trainings');
   const [newTraining, setNewTraining] = useState<Partial<Training>>({
     title: '',
     description: '',
@@ -42,6 +76,14 @@ export default function ProfessorDashboard() {
   const [editingTraining, setEditingTraining] = useState<Training | null>(null);
   const [expandedWeeks, setExpandedWeeks] = useState<string[]>([]);
   const [expandedDates, setExpandedDates] = useState<string[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [newClass, setNewClass] = useState<Partial<Class>>({
+    title: '',
+    date: '',
+    time: '',
+    duration: 60,
+    max_students: 10
+  });
 
   const fetchTrainings = async () => {
     const { data, error } = await supabase
@@ -96,11 +138,80 @@ export default function ProfessorDashboard() {
     }
   };
 
+  // Agora atualize a função fetchClasses
+  const fetchClasses = async () => {
+    const { data, error } = await supabase
+      .from('classes')
+      .select(`
+        *,
+        class_checkins (
+          id,
+          student_id,
+          checked_in_at
+        )
+      `)
+      .order('date', { ascending: true })
+      .order('time', { ascending: true });
+  
+    if (error) {
+      console.error('Erro ao buscar aulas:', error);
+      return;
+    }
+  
+    // Buscar informações dos professores da tabela profiles
+    const professorIds = [...new Set((data || []).map(item => item.professor_id))];
+    const { data: professorsData } = await supabase
+      .from('profiles')
+      .select('id, name, email')
+      .in('id', professorIds);
+  
+    // Buscar informações dos alunos da tabela profiles
+    const studentIds = [...new Set(
+      (data || [])
+        .flatMap(item => item.class_checkins || [])
+        .map(checkin => checkin.student_id)
+    )];
+    const { data: studentsData } = await supabase
+      .from('profiles')
+      .select('id, name, email')
+      .in('id', studentIds);
+  
+    // Criar maps para fácil acesso
+    const professorsMap = new Map(
+      (professorsData || []).map(prof => [prof.id, prof])
+    );
+    const studentsMap = new Map(
+      (studentsData || []).map(student => [student.id, student])
+    );
+  
+    const formattedData = (data || []).map(item => ({
+      ...item,
+      professor: {
+        id: item.professor_id,
+        email: professorsMap.get(item.professor_id)?.email || '',
+        name: professorsMap.get(item.professor_id)?.name || 'Professor'
+      },
+      class_checkins: (item.class_checkins || []).map((checkin: ClassCheckinRaw): Checkin => ({
+        id: checkin.id,
+        student_id: checkin.student_id,
+        checked_in_at: checkin.checked_in_at,
+        student: {
+          id: checkin.student_id,
+          email: studentsMap.get(checkin.student_id)?.email || '',
+          name: studentsMap.get(checkin.student_id)?.name || 'Aluno'
+        }
+      }))
+    }));
+  
+    setClasses(formattedData);
+  };
+
   useEffect(() => {
     if (user) {
       fetchTrainings();
       fetchAttendance();
       fetchStudents();
+      fetchClasses();
     }
   }, [user]);
 
@@ -133,13 +244,36 @@ export default function ProfessorDashboard() {
       if (data && data.length > 0) {
         setTrainings([...trainings, data[0] as Training]);
       }
-  
       setNewTraining({
         title: '',
         description: '',
         date: '',
         duration: 0,
         difficulty: 'iniciante',
+      });
+    }
+  };
+
+  const handleCreateClass = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const { data, error } = await supabase
+      .from('classes')
+      .insert([{ ...newClass, professor_id: user?.id }])
+      .select();
+
+    if (error) {
+      console.error('Erro ao criar aula:', error);
+      alert('Erro ao criar aula');
+    } else {
+      alert('Aula criada com sucesso!');
+      fetchClasses();
+      setNewClass({
+        title: '',
+        date: '',
+        time: '',
+        duration: 60,
+        max_students: 10
       });
     }
   };
@@ -269,9 +403,148 @@ export default function ProfessorDashboard() {
             >
               Frequência
             </button>
+            <button
+              onClick={() => setActiveTab('classes')}
+              className={`${
+                activeTab === 'classes'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Classes
+            </button>
           </nav>
         </div>
       </div>
+
+      {activeTab === 'classes' && (
+        <div className="max-w-7xl mx-auto">
+          <form onSubmit={handleCreateClass} className="mb-8 bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Criar Nova Aula</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">Título da Aula</label>
+                <input
+                  type="text"
+                  value={newClass.title}
+                  onChange={(e) => setNewClass({ ...newClass, title: e.target.value })}
+                  className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">Data</label>
+                <input
+                  type="date"
+                  value={newClass.date}
+                  onChange={(e) => setNewClass({ ...newClass, date: e.target.value })}
+                  className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">Horário</label>
+                <input
+                  type="time"
+                  value={newClass.time}
+                  onChange={(e) => setNewClass({ ...newClass, time: e.target.value })}
+                  className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">Duração (minutos)</label>
+                <input
+                  type="number"
+                  value={newClass.duration}
+                  onChange={(e) => setNewClass({ ...newClass, duration: parseInt(e.target.value) })}
+                  className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  min="1"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-2">Máximo de Alunos</label>
+                <input
+                  type="number"
+                  value={newClass.max_students}
+                  onChange={(e) => setNewClass({ ...newClass, max_students: parseInt(e.target.value) })}
+                  className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  min="1"
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              className="mt-4 w-full bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Criar Aula
+            </button>
+          </form>
+
+          {/* Lista de aulas */}
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Aulas Agendadas</h2>
+            <div className="space-y-4">
+              {classes.map((class_) => {
+                const classDate = new Date(`${class_.date}T${class_.time}`);
+                const now = new Date();
+                const isActive = now >= new Date(classDate.getTime() - 60 * 60 * 1000) && 
+                              now <= new Date(classDate.getTime() + class_.duration * 60 * 1000);
+
+                return (
+                  <div
+                    key={class_.id}
+                    className={`p-4 border rounded-lg ${
+                      isActive ? 'border-green-500 bg-green-50' : ''
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-bold text-lg text-blue-600">{class_.title}</h3>
+                        <p className="text-gray-600">
+                          {new Date(class_.date).toLocaleDateString()} às {class_.time}
+                        </p>
+                        <p className="text-gray-600">
+                          Duração: {class_.duration} minutos
+                        </p>
+                        <p className="text-gray-600">
+                          Check-ins: {class_.class_checkins?.length || 0}/{class_.max_students}
+                        </p>
+                      </div>
+                      <span
+                        className={`px-2 py-1 rounded-full text-sm ${
+                          isActive
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {isActive ? 'Em andamento' : 'Agendada'}
+                      </span>
+                    </div>
+
+                    {/* Lista de check-ins */}
+                    {class_.class_checkins.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="font-medium text-gray-700 mb-2">Alunos presentes:</h4>
+                        <ul className="space-y-2">
+                          {class_.class_checkins.map((checkin) => (
+                            <li key={checkin.student_id} className="text-gray-600">
+                              {checkin.student.name} - Check-in:{' '}
+                              {new Date(checkin.checked_in_at).toLocaleTimeString()}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {activeTab === 'students' && (
         <div className="max-w-7xl mx-auto">

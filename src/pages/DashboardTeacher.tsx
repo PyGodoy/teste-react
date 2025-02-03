@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { StudentProfile } from '../types';
+import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 interface Training {
   id: number;
@@ -59,6 +60,35 @@ interface Class {
   class_checkins: Checkin[];
 }
 
+interface StudentPerformanceData {
+  date: string;
+  seconds: number;
+  displayTime: string;
+}
+
+interface BestTime {
+  id: number;
+  student_id: string;
+  time: string;
+  description: string;
+  created_at: string;
+}
+
+interface SwimmingTime {
+  id: string;
+  distance: string;
+  style: string;
+  time_seconds: number;
+}
+
+type PeriodFilter = 'all' | 'week' | 'month' | 'custom';
+type AverageView = 'daily' | 'weekly' | 'monthly';
+
+interface PerformanceData {
+  date: string;
+  seconds: number;
+  displayTime: string;
+}
 
 export default function ProfessorDashboard() {
   const { user } = useAuthStore();
@@ -84,6 +114,17 @@ export default function ProfessorDashboard() {
     duration: 60,
     max_students: 10
   });
+  const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [studentPerformance, setStudentPerformance] = useState<StudentPerformanceData[]>([]);
+  const [studentBestTimes, setStudentBestTimes] = useState<BestTime[]>([]);
+  const [studentSwimmingTimes, setStudentSwimmingTimes] = useState<SwimmingTime[]>([]);
+  const [studentPeriodFilter, setStudentPeriodFilter] = useState<PeriodFilter>('all');
+  const [studentAverageView, setStudentAverageView] = useState<AverageView>('daily');
+  const [studentCustomDateRange, setStudentCustomDateRange] = useState({
+  startDate: '',
+  endDate: '',
+});
 
   const fetchTrainings = async () => {
     const { data, error } = await supabase
@@ -214,6 +255,137 @@ export default function ProfessorDashboard() {
       fetchClasses();
     }
   }, [user]);
+
+  const fetchStudentPerformance = async (studentId: string) => {
+    const { data, error } = await supabase
+      .from('attendances')
+      .select(`
+        completed_at,
+        maintained_time
+      `)
+      .eq('student_id', studentId)
+      .not('maintained_time', 'is', null)
+      .order('completed_at', { ascending: true });
+  
+    if (error) {
+      console.error('Erro ao buscar dados de desempenho:', error);
+      return;
+    }
+  
+    if (data) {
+      const formattedData = data
+        .filter((record) => record.maintained_time)
+        .map((record) => {
+          const [minutes, seconds] = (record.maintained_time || '0:00').split(':').map(Number);
+          const totalSeconds = (minutes * 60) + seconds;
+          const utcDate = new Date(record.completed_at);
+          const localDate = new Date(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000);
+          
+          return {
+            date: localDate.toLocaleDateString('pt-BR'),
+            seconds: totalSeconds,
+            displayTime: record.maintained_time || '0:00'
+          };
+        });
+  
+      setStudentPerformance(formattedData);
+    }
+  };
+
+  const fetchStudentSwimmingTimes = async (studentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('swimming_times')
+        .select('*')
+        .eq('student_id', studentId);
+  
+      if (error) {
+        console.error('Erro ao buscar tempos de natação:', error.message);
+        return;
+      }
+  
+      if (data) {
+        setStudentSwimmingTimes(data);
+      }
+    } catch (err) {
+      console.error('Erro na execução da função:', err);
+    }
+  };
+
+  const formatTime = (timeInSeconds: number): string => {
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = timeInSeconds % 60;
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  };
+
+  const filterDataByPeriod = (
+    data: PerformanceData[], 
+    filter: PeriodFilter,
+    customRange?: { startDate: string; endDate: string }
+  ) => {
+    const today = new Date();
+    const filteredData = data.filter((item) => {
+      const itemDate = new Date(item.date.split('/').reverse().join('-'));
+  
+      switch (filter) {
+        case 'week':
+          const lastWeek = new Date(today);
+          lastWeek.setDate(today.getDate() - 7);
+          return itemDate >= lastWeek;
+        case 'month':
+          const lastMonth = new Date(today);
+          lastMonth.setMonth(today.getMonth() - 1);
+          return itemDate >= lastMonth;
+        case 'custom':
+          if (!customRange) return true;
+          const start = customRange.startDate ? new Date(customRange.startDate) : new Date(0);
+          const end = customRange.endDate ? new Date(customRange.endDate) : new Date();
+          return itemDate >= start && itemDate <= end;
+        default:
+          return true;
+      }
+    });
+  
+    return calculateAverages(filteredData, studentAverageView);
+  };
+
+  const formatSecondsToTime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  const calculateAverages = (data: PerformanceData[], view: AverageView) => {
+    if (data.length === 0) return [];
+  
+    const groupedData: Record<string, number[]> = {};
+  
+    data.forEach((item) => {
+      const date = new Date(item.date.split('/').reverse().join('-'));
+      let key: string;
+  
+      if (view === 'weekly') {
+        const firstDay = new Date(date);
+        firstDay.setDate(date.getDate() - date.getDay() + 1);
+        key = firstDay.toLocaleDateString('pt-BR');
+      } else if (view === 'monthly') {
+        key = `${date.getMonth() + 1}/${date.getFullYear()}`;
+      } else {
+        key = item.date;
+      }
+  
+      if (!groupedData[key]) {
+        groupedData[key] = [];
+      }
+      groupedData[key].push(item.seconds);
+    });
+  
+    return Object.entries(groupedData).map(([date, values]) => ({
+      date,
+      seconds: Math.round(values.reduce((a, b) => a + b, 0) / values.length),
+      displayTime: formatSecondsToTime(Math.round(values.reduce((a, b) => a + b, 0) / values.length)),
+    }));
+  };
 
   const handleAuthorizeStudent = async (studentId: string, authorize: boolean) => {
     const { error } = await supabase
@@ -364,6 +536,248 @@ export default function ProfessorDashboard() {
     } else {
       setExpandedDates([...expandedDates, date]);
     }
+  };
+
+  const StudentProfileModal = () => {
+    if (!selectedStudent) return null;
+  
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="flex justify-between items-start mb-6">
+            <h2 className="text-2xl font-bold text-gray-800">
+              Perfil do Aluno: {selectedStudent.name}
+            </h2>
+            <button
+              onClick={() => setShowProfileModal(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+  
+          {/* Seção de Melhores Tempos */}
+          <div className="mb-8">
+            <h3 className="text-xl font-semibold mb-4 text-blue-600">Melhores Tempos</h3>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              {studentSwimmingTimes.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full">
+                    <thead>
+                      <tr>
+                        <th className="px-4 py-2 text-left">Distância</th>
+                        <th className="px-4 py-2 text-left">Estilo</th>
+                        <th className="px-4 py-2 text-left">Tempo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {studentSwimmingTimes.map((time) => (
+                        <tr key={time.id} className="hover:bg-gray-100">
+                          <td className="px-4 py-2">{time.distance}</td>
+                          <td className="px-4 py-2">
+                            {time.style.charAt(0).toUpperCase() + time.style.slice(1)}
+                          </td>
+                          <td className="px-4 py-2 font-medium">{formatTime(time.time_seconds)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-gray-600 text-center">
+                  Este aluno ainda não registrou nenhum tempo.
+                </p>
+              )}
+            </div>
+          </div>
+  
+          {/* Gráfico de Desempenho */}
+          <div>
+            <h3 className="text-xl font-semibold mb-4 text-blue-600">Gráfico de Desempenho</h3>
+            
+            {/* Controles de filtro */}
+            <div className="bg-white p-2 sm:p-4 rounded-lg shadow-md mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
+                {/* Filtro de Período */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Período
+                  </label>
+                  <select
+                    value={studentPeriodFilter}
+                    onChange={(e) => setStudentPeriodFilter(e.target.value as PeriodFilter)}
+                    className="w-full p-1 sm:p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">Todos</option>
+                    <option value="week">Última Semana</option>
+                    <option value="month">Último Mês</option>
+                    <option value="custom">Personalizado</option>
+                  </select>
+                </div>
+
+                {/* Seletor de Média */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Visualização
+                  </label>
+                  <select
+                    value={studentAverageView}
+                    onChange={(e) => setStudentAverageView(e.target.value as AverageView)}
+                    className="w-full p-1 sm:p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="daily">Diária</option>
+                    <option value="weekly">Média Semanal</option>
+                    <option value="monthly">Média Mensal</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Datas personalizadas */}
+              {studentPeriodFilter === 'custom' && (
+                <div className="mt-2 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                      Data Inicial
+                    </label>
+                    <input
+                      type="date"
+                      value={studentCustomDateRange.startDate}
+                      onChange={(e) => setStudentCustomDateRange(prev => ({
+                        ...prev,
+                        startDate: e.target.value
+                      }))}
+                      className="w-full p-1 sm:p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                      Data Final
+                    </label>
+                    <input
+                      type="date"
+                      value={studentCustomDateRange.endDate}
+                      onChange={(e) => setStudentCustomDateRange(prev => ({
+                        ...prev,
+                        endDate: e.target.value
+                      }))}
+                      className="w-full p-1 sm:p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Gráfico */}
+            <div className="bg-white p-4 rounded-lg shadow-sm">
+              <div className="h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={filterDataByPeriod(studentPerformance, studentPeriodFilter, studentCustomDateRange)}
+                    margin={{
+                      top: 5,
+                      right: 5,
+                      left: 0,
+                      bottom: 40,
+                    }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="date"
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                      tick={{
+                        fontSize: 10,
+                        dy: 10
+                      }}
+                    />
+                    <YAxis
+                      reversed={true}
+                      domain={[60, 120]}
+                      ticks={[60, 70, 80, 90, 100, 110, 120]}
+                      label={{
+                        value: 'Tempo',
+                        angle: -90,
+                        position: 'insideLeft',
+                        offset: -20,
+                        fontSize: 12
+                      }}
+                      tick={{
+                        fontSize: 10
+                      }}
+                      tickFormatter={(value) => {
+                        const minutes = Math.floor(value / 60);
+                        const seconds = value % 60;
+                        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                      }}
+                      width={40}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => {
+                        const minutes = Math.floor(value / 60);
+                        const seconds = value % 60;
+                        return [`${minutes}:${seconds.toString().padStart(2, '0')}`, 'Tempo mantido'];
+                      }}
+                      contentStyle={{
+                        fontSize: '12px'
+                      }}
+                    />
+                    <Legend
+                      wrapperStyle={{
+                        fontSize: '12px',
+                        paddingTop: '10px'
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="seconds"
+                      stroke="#2563eb"
+                      name="Tempo mantido"
+                      strokeWidth={2}
+                      dot={{
+                        r: 4,
+                        fill: '#2563eb',
+                        strokeWidth: 2
+                      }}
+                      activeDot={{
+                        r: 6,
+                        fill: '#1e40af',
+                        strokeWidth: 2
+                      }}
+                      isAnimationActive={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Tabela de dados */}
+            <div className="mt-4 bg-white p-2 sm:p-4 rounded-lg shadow-md overflow-x-auto">
+              <h3 className="text-lg font-semibold mb-2 px-2">Dados do Gráfico:</h3>
+              <table className="w-full min-w-[300px]">
+                <thead>
+                  <tr>
+                    <th className="text-left px-2 py-1 text-sm sm:text-base">Data</th>
+                    <th className="text-left px-2 py-1 text-sm sm:text-base">Tempo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filterDataByPeriod(studentPerformance, studentPeriodFilter, studentCustomDateRange)
+                    .map((item, index) => (
+                      <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                        <td className="px-2 py-1 text-sm sm:text-base">{item.date}</td>
+                        <td className="px-2 py-1 text-sm sm:text-base">{item.displayTime}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -568,6 +982,17 @@ export default function ProfessorDashboard() {
                       }`}>
                         {student.is_authorized ? 'Autorizado' : 'Pendente'}
                       </span>
+                      <button
+                        onClick={() => {
+                          setSelectedStudent(student);
+                          setShowProfileModal(true);
+                          fetchStudentPerformance(student.id);
+                          fetchStudentSwimmingTimes(student.id);
+                        }}
+                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm"
+                      >
+                        Visualizar Perfil
+                      </button>
                       <button
                         onClick={() => handleAuthorizeStudent(student.id, !student.is_authorized)}
                         className={`px-4 py-2 rounded-lg text-white text-sm font-medium ${
@@ -841,6 +1266,7 @@ export default function ProfessorDashboard() {
             ))}
           </div>
         )}
+        {showProfileModal && <StudentProfileModal />}
     </div>
   );
 }

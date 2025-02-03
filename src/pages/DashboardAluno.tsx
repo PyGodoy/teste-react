@@ -28,12 +28,12 @@ interface CompletionForm {
   professorId: string | null;
   feedback: string;
   maintainedTime: string;
-  completedDate: string; // Nova propriedade
+  completedDate: string;
 }
 
 interface PerformanceData {
   date: string;
-  seconds: number; // Mudando de minutes para seconds
+  seconds: number;
   displayTime: string;
 }
 
@@ -54,7 +54,6 @@ interface Class {
   }[];
 }
 
-// Adicione aqui os novos tipos
 type PeriodFilter = 'all' | 'week' | 'month' | 'custom';
 type AverageView = 'daily' | 'weekly' | 'monthly';
 type ActiveTab = 'trainings' | 'times' | 'performance' | 'checkin';
@@ -65,14 +64,14 @@ export default function AlunoDashboard() {
   const [expandedWeeks, setExpandedWeeks] = useState<string[]>([]);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'trainings' | 'times' | 'performance' | 'checkin'>('trainings')
+  const [activeTab, setActiveTab] = useState<ActiveTab>('trainings');
   const [classes, setClasses] = useState<Class[]>([]);
   const [completionForm, setCompletionForm] = useState<CompletionForm>({
     trainingId: null,
     professorId: null,
     feedback: '',
     maintainedTime: '',
-    completedDate: new Date().toISOString().split('T')[0] // Inicializa com a data atual
+    completedDate: new Date().toISOString().split('T')[0],
   });
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [performanceData, setPerformanceData] = useState<PerformanceData[]>([]);
@@ -80,28 +79,27 @@ export default function AlunoDashboard() {
   const [averageView, setAverageView] = useState<AverageView>('daily');
   const [customDateRange, setCustomDateRange] = useState({
     startDate: '',
-    endDate: ''
+    endDate: '',
   });
 
   const fetchClasses = async () => {
-    // Pega a data atual no fuso horário local
     const today = new Date();
     const formattedDate = today.toISOString().split('T')[0];
-  
+
     const { data, error } = await supabase
       .from('classes')
-      .select(`
-        *,
+      .select(
+        `*,
         class_checkins (
           id,
           student_id,
           checked_in_at
-        )
-      `)
-      .gte('date', formattedDate) // Pega apenas aulas de hoje em diante
+        )`
+      )
+      .gte('date', formattedDate)
       .order('date', { ascending: true })
       .order('time', { ascending: true });
-  
+
     if (error) {
       console.error('Erro ao buscar aulas:', error);
       return;
@@ -109,31 +107,29 @@ export default function AlunoDashboard() {
       setClasses(data as Class[]);
     }
   };
-  
-  // Adicione a função de check-in
+
   const handleCheckin = async (classId: number) => {
-    // Verificar se já fez check-in
     const existingCheckin = await supabase
       .from('class_checkins')
       .select('*')
       .eq('class_id', classId)
       .eq('student_id', user?.id)
       .single();
-  
+
     if (existingCheckin.data) {
       alert('Você já fez check-in nesta aula!');
       return;
     }
-  
+
     const { error } = await supabase
       .from('class_checkins')
       .insert([
         {
           class_id: classId,
           student_id: user?.id,
-        }
+        },
       ]);
-  
+
     if (error) {
       console.error('Erro ao fazer check-in:', error);
       alert('Erro ao fazer check-in');
@@ -142,13 +138,12 @@ export default function AlunoDashboard() {
       fetchClasses();
     }
   };
-  
-  // Atualize o useEffect existente para incluir fetchClasses
+
   useEffect(() => {
     if (user) {
       fetchTrainings();
       fetchPerformanceData();
-      fetchClasses(); // Adicione esta linha
+      fetchClasses();
     }
   }, [user]);
 
@@ -190,18 +185,18 @@ export default function AlunoDashboard() {
     }
   };
 
-  const convertTimeStringToSeconds = (timeString: string): { seconds: number; displayTime: string } => {
+  const convertTimeStringToSeconds = (timeString: string) => {
     if (!timeString) {
       return { seconds: 0, displayTime: '0:00' };
     }
-  
+
     try {
       if (timeString.includes(':')) {
         const [minutes, seconds] = timeString.split(':').map(Number);
-        const totalSeconds = (minutes * 60) + seconds;
+        const totalSeconds = minutes * 60 + seconds;
         return {
           seconds: totalSeconds,
-          displayTime: timeString
+          displayTime: timeString,
         };
       }
       return { seconds: 0, displayTime: '0:00' };
@@ -211,62 +206,51 @@ export default function AlunoDashboard() {
     }
   };
 
-// Primeiro, adicione um console.log para verificar os dados
-const fetchPerformanceData = async () => {
-  const { data, error } = await supabase
-    .from('attendances')
-    .select(`
-      completed_at,
-      maintained_time
-    `)
-    .eq('student_id', user?.id)
-    .not('maintained_time', 'is', null)
-    .order('completed_at', { ascending: true });
+  const fetchPerformanceData = async () => {
+    const { data, error } = await supabase
+      .from('attendances')
+      .select(
+        `completed_at,
+        maintained_time`
+      )
+      .eq('student_id', user?.id)
+      .not('maintained_time', 'is', null)
+      .order('completed_at', { ascending: true });
 
-  if (error) {
-    console.error('Erro ao buscar dados de desempenho:', error);
-    return;
-  }
+    if (error) {
+      console.error('Erro ao buscar dados de desempenho:', error);
+      return;
+    }
 
-  if (data) {
-    console.log('Dados brutos:', data); // Debug
+    if (data) {
+      const formattedData = data
+        .filter((record) => record.maintained_time)
+        .map((record) => {
+          const time = convertTimeStringToSeconds(record.maintained_time || '0');
+          const utcDate = new Date(record.completed_at);
+          const localDate = new Date(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000);
+          const formattedDate = localDate.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+          });
 
-    const formattedData = data
-      .filter(record => record.maintained_time)
-      .map(record => {
-        const time = convertTimeStringToSeconds(record.maintained_time || '0');
-        
-        // Converte a data UTC para local e formata
-        const utcDate = new Date(record.completed_at);
-        const localDate = new Date(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000);
-        const formattedDate = localDate.toLocaleDateString('pt-BR', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
+          return {
+            date: formattedDate,
+            seconds: time.seconds,
+            displayTime: time.displayTime,
+          };
         });
 
-        console.log('Data original:', record.completed_at); // Debug
-        console.log('Data local:', localDate); // Debug
-        console.log('Data formatada:', formattedDate); // Debug
-
-        return {
-          date: formattedDate,
-          seconds: time.seconds,
-          displayTime: time.displayTime
-        };
+      formattedData.sort((a, b) => {
+        const dateA = new Date(a.date.split('/').reverse().join('-'));
+        const dateB = new Date(b.date.split('/').reverse().join('-'));
+        return dateA.getTime() - dateB.getTime();
       });
 
-    // Ordena os dados por data
-    formattedData.sort((a, b) => {
-      const dateA = new Date(a.date.split('/').reverse().join('-'));
-      const dateB = new Date(b.date.split('/').reverse().join('-'));
-      return dateA.getTime() - dateB.getTime();
-    });
-
-    console.log('Dados formatados finais:', formattedData); // Debug
-    setPerformanceData(formattedData);
-  }
-};
+      setPerformanceData(formattedData);
+    }
+  };
 
   const groupTrainingsByWeek = (trainings: Training[]) => {
     const grouped: Record<string, Training[]> = {};
@@ -303,79 +287,44 @@ const fetchPerformanceData = async () => {
       professorId,
       feedback: '',
       maintainedTime: '',
-      completedDate: new Date().toISOString().split('T')[0] // Adiciona a data atual como padrão
+      completedDate: new Date().toISOString().split('T')[0],
     });
     setShowCompletionModal(true);
   };
 
-// Modifique a função handleCompleteTraining
-const handleCompleteTraining = async () => {
-  if (!completionForm.trainingId || !completionForm.professorId) return;
+  const handleCompleteTraining = async () => {
+    if (!completionForm.trainingId || !completionForm.professorId) return;
 
-  // Valida o formato do tempo
-  if (completionForm.maintainedTime && !completionForm.maintainedTime.match(/^\d{1,2}:\d{2}$/)) {
-    alert('Por favor, insira o tempo no formato correto (ex: 1:30)');
-    return;
-  }
+    if (completionForm.maintainedTime && !completionForm.maintainedTime.match(/^\d{1,2}:\d{2}$/)) {
+      alert('Por favor, insira o tempo no formato correto (ex: 1:30)');
+      return;
+    }
 
-  // Ajusta a data para meia-noite do dia selecionado no fuso horário local
-  const selectedDate = new Date(completionForm.completedDate);
-  selectedDate.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(completionForm.completedDate);
+    selectedDate.setHours(0, 0, 0, 0);
 
-  console.log('Data selecionada:', completionForm.completedDate); // Debug
-  console.log('Data convertida:', selectedDate.toISOString()); // Debug
+    const { error } = await supabase
+      .from('attendances')
+      .insert([
+        {
+          training_id: completionForm.trainingId,
+          student_id: user?.id,
+          professor_id: completionForm.professorId,
+          completed_at: selectedDate.toISOString(),
+          feedback: completionForm.feedback || null,
+          maintained_time: completionForm.maintainedTime || null,
+        },
+      ]);
 
-  const { error } = await supabase
-    .from('attendances')
-    .insert([{
-      training_id: completionForm.trainingId,
-      student_id: user?.id,
-      professor_id: completionForm.professorId,
-      completed_at: selectedDate.toISOString(), // Usa a data ajustada
-      feedback: completionForm.feedback || null,
-      maintained_time: completionForm.maintainedTime || null
-    }]);
-
-  if (error) {
-    console.error('Erro ao marcar treino como concluído:', error);
-    alert('Erro ao marcar treino como concluído');
-  } else {
-    alert('Treino marcado como concluído!');
-    setShowCompletionModal(false);
-    fetchPerformanceData();
-  }
-};
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
-      </div>
-    );
-  }
-
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full text-center">
-          <div className="mb-6">
-            <svg className="w-16 h-16 text-yellow-500 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Aguardando Autorização</h2>
-          <p className="text-gray-600 mb-6">
-            Sua conta está aguardando autorização do professor. Você será notificado quando sua conta for aprovada.
-          </p>
-          <div className="p-4 bg-yellow-50 rounded-lg">
-            <p className="text-sm text-yellow-700">
-              Por favor, aguarde o professor autorizar seu acesso aos treinos.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    if (error) {
+      console.error('Erro ao marcar treino como concluído:', error);
+      alert('Erro ao marcar treino como concluído');
+    } else {
+      alert('Treino marcado como concluído!');
+      setShowCompletionModal(false);
+      fetchPerformanceData();
+    }
+  };
 
   const formatSecondsToTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -383,12 +332,12 @@ const handleCompleteTraining = async () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const calculateAverages = (data: typeof performanceData, view: AverageView) => {
+  const calculateAverages = (data: PerformanceData[], view: AverageView) => {
     if (data.length === 0) return [];
 
     const groupedData: Record<string, number[]> = {};
 
-    data.forEach(item => {
+    data.forEach((item) => {
       const date = new Date(item.date.split('/').reverse().join('-'));
       let key: string;
 
@@ -411,13 +360,13 @@ const handleCompleteTraining = async () => {
     return Object.entries(groupedData).map(([date, values]) => ({
       date,
       seconds: Math.round(values.reduce((a, b) => a + b, 0) / values.length),
-      displayTime: formatSecondsToTime(Math.round(values.reduce((a, b) => a + b, 0) / values.length))
+      displayTime: formatSecondsToTime(Math.round(values.reduce((a, b) => a + b, 0) / values.length)),
     }));
   };
 
-  const filterDataByPeriod = (data: typeof performanceData, filter: PeriodFilter) => {
+  const filterDataByPeriod = (data: PerformanceData[], filter: PeriodFilter) => {
     const today = new Date();
-    const filteredData = data.filter(item => {
+    const filteredData = data.filter((item) => {
       const itemDate = new Date(item.date.split('/').reverse().join('-'));
 
       switch (filter) {
@@ -443,20 +392,63 @@ const handleCompleteTraining = async () => {
 
   const groupedTrainings = groupTrainingsByWeek(trainings);
 
-  return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold text-center mb-8 text-blue-600">Área do Aluno</h1>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+      </div>
+    );
+  }
 
-      <div className="max-w-7xl mx-auto mb-8">
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <div className="bg-white p-6 sm:p-8 rounded-lg shadow-xl max-w-md w-full text-center">
+          <div className="mb-6">
+            <svg
+              className="w-16 h-16 text-yellow-500 mx-auto"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Aguardando Autorização</h2>
+          <p className="text-gray-600 mb-6">
+            Sua conta está aguardando autorização do professor. Você será notificado quando sua conta for aprovada.
+          </p>
+          <div className="p-4 bg-yellow-50 rounded-lg">
+            <p className="text-sm text-yellow-700">
+              Por favor, aguarde o professor autorizar seu acesso aos treinos.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
+      <h1 className="text-2xl sm:text-3xl font-bold text-center mb-6 text-blue-600">Área do Aluno</h1>
+
+      {/* Abas de navegação */}
+      <div className="max-w-7xl mx-auto mb-6">
         <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
+          <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto whitespace-nowrap">
             <button
               onClick={() => setActiveTab('trainings')}
               className={`${
                 activeTab === 'trainings'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              } whitespace-nowrap py-2 sm:py-4 px-1 border-b-2 font-medium text-sm`}
             >
               Treinos
             </button>
@@ -466,7 +458,7 @@ const handleCompleteTraining = async () => {
                 activeTab === 'times'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              } whitespace-nowrap py-2 sm:py-4 px-1 border-b-2 font-medium text-sm`}
             >
               Melhores Tempos
             </button>
@@ -476,7 +468,7 @@ const handleCompleteTraining = async () => {
                 activeTab === 'performance'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              } whitespace-nowrap py-2 sm:py-4 px-1 border-b-2 font-medium text-sm`}
             >
               Desempenho
             </button>
@@ -486,7 +478,7 @@ const handleCompleteTraining = async () => {
                 activeTab === 'checkin'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              } whitespace-nowrap py-2 sm:py-4 px-1 border-b-2 font-medium text-sm`}
             >
               Check-in
             </button>

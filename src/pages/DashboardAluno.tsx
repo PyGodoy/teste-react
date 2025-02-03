@@ -456,17 +456,17 @@ const handleCompleteTraining = async () => {
           <h2 className="text-2xl font-bold mb-6 text-gray-800">Evolução do Desempenho</h2>
           
           {/* Controles de filtro */}
-          <div className="bg-white p-4 rounded-lg shadow-md mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white p-2 sm:p-4 rounded-lg shadow-md mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
               {/* Filtro de Período */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Período
                 </label>
                 <select
                   value={periodFilter}
                   onChange={(e) => setPeriodFilter(e.target.value as PeriodFilter)}
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-1 sm:p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="all">Todos</option>
                   <option value="week">Última Semana</option>
@@ -477,124 +477,146 @@ const handleCompleteTraining = async () => {
 
               {/* Seletor de Média */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                   Visualização
                 </label>
                 <select
                   value={averageView}
                   onChange={(e) => setAverageView(e.target.value as AverageView)}
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-1 sm:p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="daily">Diária</option>
                   <option value="weekly">Média Semanal</option>
                   <option value="monthly">Média Mensal</option>
                 </select>
               </div>
-
-              {/* Datas personalizadas */}
-              {periodFilter === 'custom' && (
-                <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Data Inicial
-                    </label>
-                    <input
-                      type="date"
-                      value={customDateRange.startDate}
-                      onChange={(e) => setCustomDateRange(prev => ({
-                        ...prev,
-                        startDate: e.target.value
-                      }))}
-                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Data Final
-                    </label>
-                    <input
-                      type="date"
-                      value={customDateRange.endDate}
-                      onChange={(e) => setCustomDateRange(prev => ({
-                        ...prev,
-                        endDate: e.target.value
-                      }))}
-                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-              )}
             </div>
+
+            {/* Datas personalizadas */}
+            {periodFilter === 'custom' && (
+              <div className="mt-2 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Data Inicial
+                  </label>
+                  <input
+                    type="date"
+                    value={customDateRange.startDate}
+                    onChange={(e) => setCustomDateRange(prev => ({
+                      ...prev,
+                      startDate: e.target.value
+                    }))}
+                    className="w-full p-1 sm:p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                    Data Final
+                  </label>
+                  <input
+                    type="date"
+                    value={customDateRange.endDate}
+                    onChange={(e) => setCustomDateRange(prev => ({
+                      ...prev,
+                      endDate: e.target.value
+                    }))}
+                    className="w-full p-1 sm:p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Gráfico */}
           {performanceData.length > 0 ? (
-            <div className="w-full h-[400px] bg-white p-4 rounded-lg shadow-md">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={filterDataByPeriod(performanceData, periodFilter)}
-                  margin={{
-                    top: 5,
-                    right: 30,
-                    left: 50,
-                    bottom: 60,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="date"
-                    interval={0}
-                    angle={-45}
-                    textAnchor="end"
-                    height={60}
-                    tick={{
-                      dy: 10
+            <div className="w-full bg-white p-2 sm:p-4 rounded-lg shadow-md">
+              {/* Altura ajustável para diferentes tamanhos de tela */}
+              <div className="h-[300px] sm:h-[400px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={filterDataByPeriod(performanceData, periodFilter)}
+                    margin={{
+                      top: 5,
+                      right: 5, // Reduzido para mobile
+                      left: 0,  // Reduzido para mobile
+                      bottom: 40, // Reduzido para mobile
                     }}
-                  />
-                  <YAxis
-                    reversed={true}
-                    domain={[60, 120]}
-                    ticks={[60, 70, 80, 90, 100, 110, 120]}
-                    label={{
-                      value: 'Tempo',
-                      angle: -90,
-                      position: 'insideLeft',
-                      offset: -35
-                    }}
-                    tickFormatter={(value) => {
-                      const minutes = Math.floor(value / 60);
-                      const seconds = value % 60;
-                      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                    }}
-                  />
-                  <Tooltip
-                    formatter={(value: number) => {
-                      const minutes = Math.floor(value / 60);
-                      const seconds = value % 60;
-                      return [`${minutes}:${seconds.toString().padStart(2, '0')}`, 'Tempo mantido'];
-                    }}
-                  />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="seconds"
-                    stroke="#2563eb"
-                    name="Tempo mantido"
-                    strokeWidth={2}
-                    dot={{
-                      r: 6,
-                      fill: '#2563eb',
-                      strokeWidth: 2
-                    }}
-                    activeDot={{
-                      r: 8,
-                      fill: '#1e40af',
-                      strokeWidth: 2
-                    }}
-                    isAnimationActive={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="date"
+                      interval={'preserveStartEnd'}  // Mostra primeiro e último
+                      angle={-45}
+                      textAnchor="end"
+                      height={50}
+                      tick={{
+                        fontSize: 10, // Fonte menor para mobile
+                        dy: 10
+                      }}
+                      tickFormatter={(value) => {
+                        // Formato mais curto para datas em mobile
+                        const [day, month, year] = value.split('/');
+                        return window.innerWidth < 640 ? `${day}/${month}` : value;
+                      }}
+                    />
+                    <YAxis
+                      reversed={true}
+                      domain={[60, 120]}
+                      ticks={[60, 70, 80, 90, 100, 110, 120]}
+                      label={{
+                        value: 'Tempo',
+                        angle: -90,
+                        position: 'insideLeft',
+                        offset: -20,
+                        fontSize: 12 // Fonte menor para mobile
+                      }}
+                      tick={{
+                        fontSize: 10 // Fonte menor para mobile
+                      }}
+                      tickFormatter={(value) => {
+                        const minutes = Math.floor(value / 60);
+                        const seconds = value % 60;
+                        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                      }}
+                      width={40} // Largura fixa para o eixo Y
+                    />
+                    <Tooltip
+                      formatter={(value: number) => {
+                        const minutes = Math.floor(value / 60);
+                        const seconds = value % 60;
+                        return [`${minutes}:${seconds.toString().padStart(2, '0')}`, 'Tempo mantido'];
+                      }}
+                      contentStyle={{
+                        fontSize: '12px' // Fonte menor para o tooltip
+                      }}
+                    />
+                    <Legend
+                      wrapperStyle={{
+                        fontSize: '12px', // Fonte menor para a legenda
+                        paddingTop: '10px'
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="seconds"
+                      stroke="#2563eb"
+                      name="Tempo mantido"
+                      strokeWidth={2}
+                      dot={{
+                        r: 4, // Pontos menores em mobile
+                        fill: '#2563eb',
+                        strokeWidth: 2
+                      }}
+                      activeDot={{
+                        r: 6, // Pontos ativos menores em mobile
+                        fill: '#1e40af',
+                        strokeWidth: 2
+                      }}
+                      isAnimationActive={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           ) : (
             <div className="bg-white p-6 rounded-lg shadow-md text-center">
@@ -605,21 +627,21 @@ const handleCompleteTraining = async () => {
             </div>
           )}
           
-          {/* Tabela de dados */}
-          <div className="mt-4 bg-white p-4 rounded-lg shadow-md">
-            <h3 className="text-lg font-semibold mb-2">Dados do Gráfico:</h3>
-            <table className="w-full">
+          {/* Tabela de dados - Também ajustada para mobile */}
+          <div className="mt-4 bg-white p-2 sm:p-4 rounded-lg shadow-md overflow-x-auto">
+            <h3 className="text-lg font-semibold mb-2 px-2">Dados do Gráfico:</h3>
+            <table className="w-full min-w-[300px]">
               <thead>
                 <tr>
-                  <th className="text-left">Data</th>
-                  <th className="text-left">Tempo</th>
+                  <th className="text-left px-2 py-1 text-sm sm:text-base">Data</th>
+                  <th className="text-left px-2 py-1 text-sm sm:text-base">Tempo</th>
                 </tr>
               </thead>
               <tbody>
                 {filterDataByPeriod(performanceData, periodFilter).map((item, index) => (
-                  <tr key={index}>
-                    <td>{item.date}</td>
-                    <td>{item.displayTime}</td>
+                  <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+                    <td className="px-2 py-1 text-sm sm:text-base">{item.date}</td>
+                    <td className="px-2 py-1 text-sm sm:text-base">{item.displayTime}</td>
                   </tr>
                 ))}
               </tbody>

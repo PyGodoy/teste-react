@@ -3,6 +3,7 @@ export interface User {
   email: string;
   name: string;
   role: 'professor' | 'aluno';
+  is_authorized?: boolean;
 }
 
 export interface Training {
@@ -21,4 +22,13 @@ export interface Attendance {
   student_id: string;
   completed_at: string;
   feedback?: string;
+}
+
+export interface StudentProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: 'aluno';
+  is_authorized: boolean;
+  created_at: string;
 }

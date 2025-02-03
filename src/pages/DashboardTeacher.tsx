@@ -547,12 +547,12 @@ export default function ProfessorDashboard() {
       )}
 
       {activeTab === 'students' && (
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-white shadow overflow-hidden sm:rounded-md">
             <ul className="divide-y divide-gray-200">
               {students.map((student) => (
                 <li key={student.id}>
-                  <div className="px-4 py-4 sm:px-6 flex items-center justify-between">
+                  <div className="px-4 py-4 sm:px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between">
                     <div className="flex flex-col">
                       <span className="text-sm font-medium text-gray-900">{student.name}</span>
                       <span className="text-sm text-gray-500">{student.email}</span>
@@ -560,7 +560,7 @@ export default function ProfessorDashboard() {
                         Cadastrado em: {new Date(student.created_at).toLocaleDateString()}
                       </span>
                     </div>
-                    <div className="flex items-center space-x-4">
+                    <div className="mt-2 sm:mt-0 flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                       <span className={`px-2 py-1 text-xs rounded-full ${
                         student.is_authorized
                           ? 'bg-green-100 text-green-800'

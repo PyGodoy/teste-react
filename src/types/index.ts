@@ -32,3 +32,12 @@ export interface StudentProfile {
   is_authorized: boolean;
   created_at: string;
 }
+
+export interface SwimmingTime {
+  id: string;
+  student_id: string;
+  distance: '50m' | '100m' | '200m' | '400m' | '800m' | '1500m';
+  style: 'crawl' | 'costas' | 'peito' | 'borboleta' | 'medley';
+  time_seconds: number;
+  created_at: string;
+}

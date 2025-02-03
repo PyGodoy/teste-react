@@ -18,6 +18,8 @@ interface AttendanceRecord {
   training_id: number;
   student_id: number;
   completed_at: string;
+  feedback: string | null;
+  maintained_time: string | null;
   trainings: Training;
   profiles: {
     name: string;
@@ -504,33 +506,68 @@ export default function ProfessorDashboard() {
         </>
       )}
 
-      {activeTab === 'attendance' && (
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold mb-4 text-gray-800">Frequência dos Alunos</h2>
-          {Object.entries(groupedAttendance).map(([date, records]) => (
-            <div key={date} className="mb-4">
-              <button
-                onClick={() => toggleDate(date)}
-                className="w-full text-left p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex justify-between items-center"
-              >
-                <span className="font-semibold">{date}</span>
-                <span>{expandedDates.includes(date) ? '▲' : '▼'}</span>
-              </button>
-              {expandedDates.includes(date) && (
-                <div className="mt-2 pl-4">
-                  {records.map((record) => (
-                    <div key={record.id} className="mb-2 p-2 border rounded-lg">
-                      <p className="font-semibold">Aluno: {record.profiles.name}</p>
-                      <p className="text-gray-600">Treino: {record.trainings.title}</p>
-                      <p>Concluído em: {new Date(record.completed_at).toLocaleString()}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+        {activeTab === 'attendance' && (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Frequência dos Alunos</h2>
+            {Object.entries(groupedAttendance).map(([date, records]) => (
+              <div key={date} className="mb-4">
+                <button
+                  onClick={() => toggleDate(date)}
+                  className="w-full text-left p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex justify-between items-center"
+                >
+                  <span className="font-semibold">{date}</span>
+                  <span>{expandedDates.includes(date) ? '▲' : '▼'}</span>
+                </button>
+                {expandedDates.includes(date) && (
+                  <div className="mt-2 pl-4">
+                    {records.map((record) => (
+                      <div key={record.id} className="mb-4 p-4 border rounded-lg bg-gray-50">
+                        <div className="grid grid-cols-1 gap-2">
+                          <p className="font-semibold text-lg text-blue-600">
+                            Aluno: {record.profiles.name}
+                          </p>
+                          <p className="text-gray-700">
+                            Treino: {record.trainings.title}
+                          </p>
+                          <p className="text-gray-600">
+                            Concluído em: {new Date(record.completed_at).toLocaleString()}
+                          </p>
+                          
+                          {/* Seção de Feedback */}
+                          {record.feedback && (
+                            <div className="mt-2">
+                              <p className="font-medium text-gray-700">Feedback do aluno:</p>
+                              <p className="ml-2 text-gray-600 bg-white p-2 rounded-lg border">
+                                {record.feedback}
+                              </p>
+                            </div>
+                          )}
+                          
+                          {/* Tempo mantido na série */}
+                          {record.maintained_time && (
+                            <div className="mt-2">
+                              <p className="font-medium text-gray-700">Tempo mantido na série:</p>
+                              <p className="ml-2 text-gray-600 bg-white p-2 rounded-lg border">
+                                {record.maintained_time}
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Indicador visual se não houver feedback ou tempo registrado */}
+                          {!record.feedback && !record.maintained_time && (
+                            <p className="text-gray-500 italic mt-2">
+                              Nenhum feedback ou tempo registrado
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
     </div>
   );
 }

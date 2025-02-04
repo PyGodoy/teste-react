@@ -527,7 +527,7 @@ export default function AlunoDashboard() {
 </div>
 
       {activeTab === 'trainings' && (
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold mb-6 text-gray-800">Treinos da Semana</h2>
           <div className="space-y-4">
             {Object.entries(groupedTrainings).map(([weekKey, weekTrainings]) => (
@@ -581,204 +581,204 @@ export default function AlunoDashboard() {
         </div>
       )}
 
-      {activeTab === 'performance' && (
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold mb-6 text-gray-800">Evolução do Desempenho</h2>
-          
-          {/* Controles de filtro */}
-          <div className="bg-white p-2 sm:p-4 rounded-lg shadow-md mb-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
-              {/* Filtro de Período */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                  Período
-                </label>
-                <select
-                  value={periodFilter}
-                  onChange={(e) => setPeriodFilter(e.target.value as PeriodFilter)}
-                  className="w-full p-1 sm:p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">Todos</option>
-                  <option value="week">Última Semana</option>
-                  <option value="month">Último Mês</option>
-                  <option value="custom">Personalizado</option>
-                </select>
-              </div>
+{activeTab === 'performance' && (
+  <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2 className="text-2xl font-bold mb-6 text-gray-800">Evolução do Desempenho</h2>
+    
+    {/* Controles de filtro */}
+    <div className="bg-white p-4 rounded-lg shadow-md mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Filtro de Período */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Período
+          </label>
+          <select
+            value={periodFilter}
+            onChange={(e) => setPeriodFilter(e.target.value as PeriodFilter)}
+            className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">Todos</option>
+            <option value="week">Última Semana</option>
+            <option value="month">Último Mês</option>
+            <option value="custom">Personalizado</option>
+          </select>
+        </div>
 
-              {/* Seletor de Média */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                  Visualização
-                </label>
-                <select
-                  value={averageView}
-                  onChange={(e) => setAverageView(e.target.value as AverageView)}
-                  className="w-full p-1 sm:p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="daily">Diária</option>
-                  <option value="weekly">Média Semanal</option>
-                  <option value="monthly">Média Mensal</option>
-                </select>
-              </div>
-            </div>
+        {/* Seletor de Média */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Visualização
+          </label>
+          <select
+            value={averageView}
+            onChange={(e) => setAverageView(e.target.value as AverageView)}
+            className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="daily">Diária</option>
+            <option value="weekly">Média Semanal</option>
+            <option value="monthly">Média Mensal</option>
+          </select>
+        </div>
+      </div>
 
-            {/* Datas personalizadas */}
-            {periodFilter === 'custom' && (
-              <div className="mt-2 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                    Data Inicial
-                  </label>
-                  <input
-                    type="date"
-                    value={customDateRange.startDate}
-                    onChange={(e) => setCustomDateRange(prev => ({
-                      ...prev,
-                      startDate: e.target.value
-                    }))}
-                    className="w-full p-1 sm:p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                    Data Final
-                  </label>
-                  <input
-                    type="date"
-                    value={customDateRange.endDate}
-                    onChange={(e) => setCustomDateRange(prev => ({
-                      ...prev,
-                      endDate: e.target.value
-                    }))}
-                    className="w-full p-1 sm:p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-            )}
+      {/* Datas personalizadas */}
+      {periodFilter === 'custom' && (
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Data Inicial
+            </label>
+            <input
+              type="date"
+              value={customDateRange.startDate}
+              onChange={(e) => setCustomDateRange(prev => ({
+                ...prev,
+                startDate: e.target.value
+              }))}
+              className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
           </div>
-
-          {/* Gráfico */}
-          {performanceData.length > 0 ? (
-            <div className="w-full bg-white p-2 sm:p-4 rounded-lg shadow-md">
-              {/* Altura ajustável para diferentes tamanhos de tela */}
-              <div className="h-[300px] sm:h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={filterDataByPeriod(performanceData, periodFilter)}
-                    margin={{
-                      top: 5,
-                      right: 5, // Reduzido para mobile
-                      left: 0,  // Reduzido para mobile
-                      bottom: 40, // Reduzido para mobile
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis
-                      dataKey="date"
-                      interval={'preserveStartEnd'}  // Mostra primeiro e último
-                      angle={-45}
-                      textAnchor="end"
-                      height={50}
-                      tick={{
-                        fontSize: 10, // Fonte menor para mobile
-                        dy: 10
-                      }}
-                      tickFormatter={(value) => {
-                        // Formato mais curto para datas em mobile
-                        const [day, month, year] = value.split('/');
-                        return window.innerWidth < 640 ? `${day}/${month}` : value;
-                      }}
-                    />
-                    <YAxis
-                      reversed={true}
-                      domain={[60, 120]}
-                      ticks={[60, 70, 80, 90, 100, 110, 120]}
-                      label={{
-                        value: 'Tempo',
-                        angle: -90,
-                        position: 'insideLeft',
-                        offset: -20,
-                        fontSize: 12 // Fonte menor para mobile
-                      }}
-                      tick={{
-                        fontSize: 10 // Fonte menor para mobile
-                      }}
-                      tickFormatter={(value) => {
-                        const minutes = Math.floor(value / 60);
-                        const seconds = value % 60;
-                        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                      }}
-                      width={40} // Largura fixa para o eixo Y
-                    />
-                    <Tooltip
-                      formatter={(value: number) => {
-                        const minutes = Math.floor(value / 60);
-                        const seconds = value % 60;
-                        return [`${minutes}:${seconds.toString().padStart(2, '0')}`, 'Tempo mantido'];
-                      }}
-                      contentStyle={{
-                        fontSize: '12px' // Fonte menor para o tooltip
-                      }}
-                    />
-                    <Legend
-                      wrapperStyle={{
-                        fontSize: '12px', // Fonte menor para a legenda
-                        paddingTop: '10px'
-                      }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="seconds"
-                      stroke="#2563eb"
-                      name="Tempo mantido"
-                      strokeWidth={2}
-                      dot={{
-                        r: 4, // Pontos menores em mobile
-                        fill: '#2563eb',
-                        strokeWidth: 2
-                      }}
-                      activeDot={{
-                        r: 6, // Pontos ativos menores em mobile
-                        fill: '#1e40af',
-                        strokeWidth: 2
-                      }}
-                      isAnimationActive={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white p-6 rounded-lg shadow-md text-center">
-              <p className="text-gray-600">
-                Ainda não há dados de desempenho registrados.
-                Complete alguns treinos e registre seus tempos para ver sua evolução!
-              </p>
-            </div>
-          )}
-          
-          {/* Tabela de dados - Também ajustada para mobile */}
-          <div className="mt-4 bg-white p-2 sm:p-4 rounded-lg shadow-md overflow-x-auto">
-            <h3 className="text-lg font-semibold mb-2 px-2">Dados do Gráfico:</h3>
-            <table className="w-full min-w-[300px]">
-              <thead>
-                <tr>
-                  <th className="text-left px-2 py-1 text-sm sm:text-base">Data</th>
-                  <th className="text-left px-2 py-1 text-sm sm:text-base">Tempo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filterDataByPeriod(performanceData, periodFilter).map((item, index) => (
-                  <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
-                    <td className="px-2 py-1 text-sm sm:text-base">{item.date}</td>
-                    <td className="px-2 py-1 text-sm sm:text-base">{item.displayTime}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Data Final
+            </label>
+            <input
+              type="date"
+              value={customDateRange.endDate}
+              onChange={(e) => setCustomDateRange(prev => ({
+                ...prev,
+                endDate: e.target.value
+              }))}
+              className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
           </div>
         </div>
       )}
+    </div>
+
+    {/* Gráfico */}
+    {performanceData.length > 0 ? (
+      <div className="w-full bg-white p-4 rounded-lg shadow-md">
+        {/* Altura ajustável para diferentes tamanhos de tela */}
+        <div className="h-[300px] sm:h-[400px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={filterDataByPeriod(performanceData, periodFilter)}
+              margin={{
+                top: 5,
+                right: 5, // Reduzido para mobile
+                left: 0,  // Reduzido para mobile
+                bottom: 40, // Reduzido para mobile
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="date"
+                interval={'preserveStartEnd'}  // Mostra primeiro e último
+                angle={-45}
+                textAnchor="end"
+                height={50}
+                tick={{
+                  fontSize: 10, // Fonte menor para mobile
+                  dy: 10
+                }}
+                tickFormatter={(value) => {
+                  // Formato mais curto para datas em mobile
+                  const [day, month, year] = value.split('/');
+                  return window.innerWidth < 640 ? `${day}/${month}` : value;
+                }}
+              />
+              <YAxis
+                reversed={true}
+                domain={[60, 120]}
+                ticks={[60, 70, 80, 90, 100, 110, 120]}
+                label={{
+                  value: 'Tempo',
+                  angle: -90,
+                  position: 'insideLeft',
+                  offset: -20,
+                  fontSize: 12 // Fonte menor para mobile
+                }}
+                tick={{
+                  fontSize: 10 // Fonte menor para mobile
+                }}
+                tickFormatter={(value) => {
+                  const minutes = Math.floor(value / 60);
+                  const seconds = value % 60;
+                  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                }}
+                width={40} // Largura fixa para o eixo Y
+              />
+              <Tooltip
+                formatter={(value: number) => {
+                  const minutes = Math.floor(value / 60);
+                  const seconds = value % 60;
+                  return [`${minutes}:${seconds.toString().padStart(2, '0')}`, 'Tempo mantido'];
+                }}
+                contentStyle={{
+                  fontSize: '12px' // Fonte menor para o tooltip
+                }}
+              />
+              <Legend
+                wrapperStyle={{
+                  fontSize: '12px', // Fonte menor para a legenda
+                  paddingTop: '10px'
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="seconds"
+                stroke="#2563eb"
+                name="Tempo mantido"
+                strokeWidth={2}
+                dot={{
+                  r: 4, // Pontos menores em mobile
+                  fill: '#2563eb',
+                  strokeWidth: 2
+                }}
+                activeDot={{
+                  r: 6, // Pontos ativos menores em mobile
+                  fill: '#1e40af',
+                  strokeWidth: 2
+                }}
+                isAnimationActive={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    ) : (
+      <div className="bg-white p-6 rounded-lg shadow-md text-center">
+        <p className="text-gray-600">
+          Ainda não há dados de desempenho registrados.
+          Complete alguns treinos e registre seus tempos para ver sua evolução!
+        </p>
+      </div>
+    )}
+    
+    {/* Tabela de dados - Também ajustada para mobile */}
+    <div className="mt-4 bg-white p-4 rounded-lg shadow-md overflow-x-auto">
+      <h3 className="text-lg font-semibold mb-2">Dados do Gráfico:</h3>
+      <table className="w-full min-w-[300px]">
+        <thead>
+          <tr>
+            <th className="text-left px-2 py-1 text-sm sm:text-base">Data</th>
+            <th className="text-left px-2 py-1 text-sm sm:text-base">Tempo</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filterDataByPeriod(performanceData, periodFilter).map((item, index) => (
+            <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : ''}>
+              <td className="px-2 py-1 text-sm sm:text-base">{item.date}</td>
+              <td className="px-2 py-1 text-sm sm:text-base">{item.displayTime}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
 
       {/* Modal de Conclusão do Treino */}
       {showCompletionModal && (
@@ -870,138 +870,138 @@ export default function AlunoDashboard() {
         </div>
       )}
       
-          {activeTab === 'checkin' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center">
-                  <Calendar className="w-6 h-6 mr-2 text-blue-500" />
-                  Aulas Disponíveis
-                </h2>
-              </div>
+      {activeTab === 'checkin' && (
+        <div className="space-y-6 px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+              <Calendar className="w-6 h-6 mr-2 text-blue-500" />
+              Aulas Disponíveis
+            </h2>
+          </div>
 
-              <div className="grid gap-6">
-                {classes.map((class_) => {
-                  const [year, month, day] = class_.date.split('-').map(Number);
-                  const [hours, minutes] = class_.time.split(':').map(Number);
-                  const classDate = new Date(year, month - 1, day, hours, minutes);
-                  const now = new Date();
-                  const oneHourBefore = new Date(classDate);
-                  oneHourBefore.setHours(oneHourBefore.getHours() - 1);
-                  const classEndTime = new Date(classDate);
-                  classEndTime.setMinutes(classEndTime.getMinutes() + class_.duration);
+          <div className="grid gap-6">
+            {classes.map((class_) => {
+              const [year, month, day] = class_.date.split('-').map(Number);
+              const [hours, minutes] = class_.time.split(':').map(Number);
+              const classDate = new Date(year, month - 1, day, hours, minutes);
+              const now = new Date();
+              const oneHourBefore = new Date(classDate);
+              oneHourBefore.setHours(oneHourBefore.getHours() - 1);
+              const classEndTime = new Date(classDate);
+              classEndTime.setMinutes(classEndTime.getMinutes() + class_.duration);
 
-                  const isActive = now >= oneHourBefore && now <= classEndTime;
-                  const hasCheckedIn = class_.class_checkins?.some(
-                    checkin => checkin.student_id === user?.id
-                  );
-                  const isFull = class_.class_checkins?.length >= class_.max_students;
+              const isActive = now >= oneHourBefore && now <= classEndTime;
+              const hasCheckedIn = class_.class_checkins?.some(
+                checkin => checkin.student_id === user?.id
+              );
+              const isFull = class_.class_checkins?.length >= class_.max_students;
 
-                  return (
-                    <div
-                      key={class_.id}
-                      className={`bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md transition-all duration-300 hover:shadow-lg ${
-                        isActive ? 'ring-2 ring-blue-500' : ''
-                      }`}
-                    >
-                      <div className="p-6">
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-3">
-                            <h3 className="text-xl font-bold text-gray-900">{class_.title}</h3>
-                            <div className="space-y-2">
-                              <p className="flex items-center text-gray-600">
-                                <Calendar className="w-4 h-4 mr-2" />
-                                {classDate.toLocaleDateString()}
-                              </p>
-                              <p className="flex items-center text-gray-600">
-                                <Clock className="w-4 h-4 mr-2" />
-                                {classDate.toLocaleTimeString([], { 
-                                  hour: '2-digit', 
-                                  minute: '2-digit' 
-                                })}
-                              </p>
-                              <p className="flex items-center text-gray-600">
-                                <Timer className="w-4 h-4 mr-2" />
-                                {class_.duration} minutos
-                              </p>
-                              <p className="flex items-center text-gray-600">
-                                <Users className="w-4 h-4 mr-2" />
-                                {class_.class_checkins?.length || 0}/{class_.max_students} vagas
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col items-end space-y-3">
-                            <span
-                              className={`px-4 py-2 rounded-full text-sm font-medium ${
-                                isActive
-                                  ? 'bg-green-100 text-green-800'
-                                  : now > classEndTime
-                                  ? 'bg-gray-100 text-gray-800'
-                                  : now < oneHourBefore
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-blue-100 text-blue-800'
-                              }`}
-                            >
-                              {isActive 
-                                ? 'Check-in Disponível' 
-                                : now > classEndTime
-                                ? 'Encerrada'
-                                : now < oneHourBefore
-                                ? `Em breve`
-                                : 'Agendada'}
-                            </span>
-
-                            {hasCheckedIn ? (
-                              <div className="flex items-center text-green-600">
-                                <CheckCircle className="w-5 h-5 mr-1" />
-                                <span className="font-medium">Check-in realizado</span>
-                              </div>
-                            ) : (
-                              <button
-                                onClick={() => handleCheckin(class_.id)}
-                                disabled={!isActive || isFull || now > classEndTime}
-                                className={`px-6 py-2 rounded-lg text-white font-medium transition-all duration-200 ${
-                                  isActive && !isFull && now <= classEndTime
-                                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
-                                    : 'bg-gray-400 cursor-not-allowed'
-                                }`}
-                              >
-                                {isFull 
-                                  ? 'Aula lotada' 
-                                  : now > classEndTime
-                                  ? 'Aula encerrada'
-                                  : !isActive 
-                                  ? 'Aguardando' 
-                                  : 'Fazer Check-in'}
-                              </button>
-                            )}
-                          </div>
+              return (
+                <div
+                  key={class_.id}
+                  className={`bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md transition-all duration-300 hover:shadow-lg ${
+                    isActive ? 'ring-2 ring-blue-500' : ''
+                  }`}
+                >
+                  <div className="p-6">
+                    <div className="flex justify-between items-start">
+                      <div className="space-y-3">
+                        <h3 className="text-xl font-bold text-gray-900">{class_.title}</h3>
+                        <div className="space-y-2">
+                          <p className="flex items-center text-gray-600">
+                            <Calendar className="w-4 h-4 mr-2" />
+                            {classDate.toLocaleDateString()}
+                          </p>
+                          <p className="flex items-center text-gray-600">
+                            <Clock className="w-4 h-4 mr-2" />
+                            {classDate.toLocaleTimeString([], { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </p>
+                          <p className="flex items-center text-gray-600">
+                            <Timer className="w-4 h-4 mr-2" />
+                            {class_.duration} minutos
+                          </p>
+                          <p className="flex items-center text-gray-600">
+                            <Users className="w-4 h-4 mr-2" />
+                            {class_.class_checkins?.length || 0}/{class_.max_students} vagas
+                          </p>
                         </div>
+                      </div>
 
-                        {hasCheckedIn && (
-                          <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100">
-                            <p className="text-green-700 flex items-center">
-                              <CheckCircle className="w-5 h-5 mr-2" />
-                              Presença confirmada! Não se esqueça do horário da aula.
-                            </p>
+                      <div className="flex flex-col items-end space-y-3">
+                        <span
+                          className={`px-4 py-2 rounded-full text-sm font-medium ${
+                            isActive
+                              ? 'bg-green-100 text-green-800'
+                              : now > classEndTime
+                              ? 'bg-gray-100 text-gray-800'
+                              : now < oneHourBefore
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}
+                        >
+                          {isActive 
+                            ? 'Check-in Disponível' 
+                            : now > classEndTime
+                            ? 'Encerrada'
+                            : now < oneHourBefore
+                            ? `Em breve`
+                            : 'Agendada'}
+                        </span>
+
+                        {hasCheckedIn ? (
+                          <div className="flex items-center text-green-600">
+                            <CheckCircle className="w-5 h-5 mr-1" />
+                            <span className="font-medium">Check-in realizado</span>
                           </div>
+                        ) : (
+                          <button
+                            onClick={() => handleCheckin(class_.id)}
+                            disabled={!isActive || isFull || now > classEndTime}
+                            className={`px-6 py-2 rounded-lg text-white font-medium transition-all duration-200 ${
+                              isActive && !isFull && now <= classEndTime
+                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
+                                : 'bg-gray-400 cursor-not-allowed'
+                            }`}
+                          >
+                            {isFull 
+                              ? 'Aula lotada' 
+                              : now > classEndTime
+                              ? 'Aula encerrada'
+                              : !isActive 
+                              ? 'Aguardando' 
+                              : 'Fazer Check-in'}
+                          </button>
                         )}
                       </div>
                     </div>
-                  );
-                })}
 
-                {classes.length === 0 && (
-                  <div className="text-center py-12 bg-gray-50 rounded-xl">
-                    <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600">
-                      Nenhuma aula disponível no momento.
-                    </p>
+                    {hasCheckedIn && (
+                      <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100">
+                        <p className="text-green-700 flex items-center">
+                          <CheckCircle className="w-5 h-5 mr-2" />
+                          Presença confirmada! Não se esqueça do horário da aula.
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  )}
                 </div>
-            </div>
-          )}
+              );
+            })}
+
+            {classes.length === 0 && (
+              <div className="text-center py-12 bg-gray-50 rounded-xl">
+                <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">
+                  Nenhuma aula disponível no momento.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

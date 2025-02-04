@@ -10,9 +10,10 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-100">
       <nav className="bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
+          <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
-              <h1 className="text-xl font-bold">Sistema de Treinos de Natação</h1>
+              <img src="src/assets/images/logo.png" alt="Logo" className="h-10 w-10 mr-2" />
+              <h1 className="text-xl font-bold">Apanat</h1>
             </div>
             <div className="flex items-center">
               <span className="mr-4">Olá, {user?.name}</span>
@@ -27,14 +28,14 @@ export default function Dashboard() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <main className="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-0">
         {user?.role === 'professor' ? (
           <div>
-            {<ProfessorDashboard/>}
+            <ProfessorDashboard />
           </div>
         ) : (
           <div>
-            {<AlunoDashboard/>}
+            <AlunoDashboard />
           </div>
         )}
       </main>

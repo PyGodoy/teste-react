@@ -12,7 +12,7 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center">
-              <img src="src/assets/images/logo.png" alt="Logo" className="h-10 w-10 mr-2" />
+              <img src="/logo.png" alt="Logo" className="h-10 w-10 mr-2" />
               <h1 className="text-xl font-bold">Apanat</h1>
             </div>
             <div className="flex items-center">

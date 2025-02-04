@@ -82,6 +82,20 @@ export default function AlunoDashboard() {
     startDate: '',
     endDate: '',
   });
+  const getTabDescription = (tab: 'trainings' | 'times' | 'performance' | 'checkin'): string => {
+    switch (tab) {
+      case 'trainings':
+        return 'Visualize e Acompanhe Seus Treinos da Semana.';
+      case 'times':
+        return 'Registre Seus Melhores Tempos de Campeonato ';
+      case 'performance':
+        return 'Acompanhe a Evolução do Seu Desempenho ao Longo do Tempo.';
+      case 'checkin':
+        return 'Faça Check-in nas Aulas Disponíveis Para Confirmar sua Presença.';
+      default:
+        return '';
+    }
+  };
 
   const fetchClasses = async () => {
     const today = new Date();
@@ -465,66 +479,59 @@ export default function AlunoDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 text-center mb-2">
-            Bem-vindo à sua área de treino
-          </h1>
-          <p className="text-gray-600 text-center">
-            Acompanhe seu progresso e mantenha-se no ritmo
-          </p>
+  
+      {/* Abas de navegação */}
+      <div className="bg-white shadow-lg mb-8 border-0">
+        <nav className="flex space-x-1 p-2 overflow-x-auto md:overflow-x-visible whitespace-nowrap border-0">
+          <button
+            onClick={() => setActiveTab('trainings')}
+            className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+              activeTab === 'trainings'
+                ? 'bg-blue-500 text-white shadow-md'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Timer className="w-5 h-5 mr-2" />
+            Treinos
+          </button>
+          <button
+            onClick={() => setActiveTab('times')}
+            className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+              activeTab === 'times'
+                ? 'bg-blue-500 text-white shadow-md'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Activity className="w-5 h-5 mr-2" />
+            Meus Tempos
+          </button>
+          <button
+            onClick={() => setActiveTab('performance')}
+            className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+              activeTab === 'performance'
+                ? 'bg-blue-500 text-white shadow-md'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Award className="w-5 h-5 mr-2" />
+            Desempenho
+          </button>
+          <button
+            onClick={() => setActiveTab('checkin')}
+            className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+              activeTab === 'checkin'
+                ? 'bg-blue-500 text-white shadow-md'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Calendar className="w-5 h-5 mr-2" />
+            Check-in
+          </button>
+        </nav>
       </div>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+          <p className="text-gray-600 text-center">{getTabDescription(activeTab)}</p>
       </div>
-
-{/* Abas de navegação */}
-<div className="bg-white rounded-xl shadow-lg mb-8">
-  <nav className="flex space-x-1 p-2 overflow-x-auto md:overflow-x-visible whitespace-nowrap">
-    <button
-      onClick={() => setActiveTab('trainings')}
-      className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-        activeTab === 'trainings'
-          ? 'bg-blue-500 text-white shadow-md'
-          : 'text-gray-600 hover:bg-gray-100'
-      }`}
-    >
-      <Timer className="w-5 h-5 mr-2" />
-      Treinos
-    </button>
-    <button
-      onClick={() => setActiveTab('times')}
-      className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-        activeTab === 'times'
-          ? 'bg-blue-500 text-white shadow-md'
-          : 'text-gray-600 hover:bg-gray-100'
-      }`}
-    >
-      <Activity className="w-5 h-5 mr-2" />
-      Meus Tempos
-    </button>
-    <button
-      onClick={() => setActiveTab('performance')}
-      className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-        activeTab === 'performance'
-          ? 'bg-blue-500 text-white shadow-md'
-          : 'text-gray-600 hover:bg-gray-100'
-      }`}
-    >
-      <Award className="w-5 h-5 mr-2" />
-      Desempenho
-    </button>
-    <button
-      onClick={() => setActiveTab('checkin')}
-      className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-        activeTab === 'checkin'
-          ? 'bg-blue-500 text-white shadow-md'
-          : 'text-gray-600 hover:bg-gray-100'
-      }`}
-    >
-      <Calendar className="w-5 h-5 mr-2" />
-      Check-in
-    </button>
-  </nav>
-</div>
 
       {activeTab === 'trainings' && (
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

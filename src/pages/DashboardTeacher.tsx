@@ -81,6 +81,14 @@ interface SwimmingTime {
   time_seconds: number;
 }
 
+interface NewClass {
+  title: string;
+  date: string;
+  time: string;
+  duration: number;
+  max_students: number;
+}
+
 type PeriodFilter = 'all' | 'week' | 'month' | 'custom';
 type AverageView = 'daily' | 'weekly' | 'monthly';
 
@@ -107,7 +115,7 @@ export default function ProfessorDashboard() {
   const [expandedWeeks, setExpandedWeeks] = useState<string[]>([]);
   const [expandedDates, setExpandedDates] = useState<string[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
-  const [newClass, setNewClass] = useState<Partial<Class>>({
+  const [newClass, setNewClass] = useState<NewClass>({
     title: '',
     date: '',
     time: '',
@@ -426,20 +434,41 @@ export default function ProfessorDashboard() {
     }
   };
 
+  // No handleCreateClass (ProfessorDashboard.tsx)
   const handleCreateClass = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    const { data, error } = await supabase
-      .from('classes')
-      .insert([{ ...newClass, professor_id: user?.id }])
-      .select();
-
-    if (error) {
-      console.error('Erro ao criar aula:', error);
-      alert('Erro ao criar aula');
-    } else {
+  
+    if (!newClass.date || !newClass.time) {
+      alert('Data e horário são obrigatórios');
+      return;
+    }
+  
+    try {
+      // Criar a data no formato correto para o banco
+      const classData = {
+        title: newClass.title,
+        date: newClass.date, // exemplo: "2025-02-03"
+        time: newClass.time, // exemplo: "23:07:00"
+        duration: newClass.duration,
+        max_students: newClass.max_students,
+        professor_id: user?.id
+      };
+  
+      const { data, error } = await supabase
+        .from('classes')
+        .insert([classData])
+        .select();
+  
+      if (error) {
+        console.error('Erro ao criar aula:', error);
+        alert('Erro ao criar aula');
+        return;
+      }
+  
       alert('Aula criada com sucesso!');
       fetchClasses();
+      
+      // Resetar o formulário
       setNewClass({
         title: '',
         date: '',
@@ -447,6 +476,10 @@ export default function ProfessorDashboard() {
         duration: 60,
         max_students: 10
       });
+  
+    } catch (err) {
+      console.error('Erro ao criar aula:', err);
+      alert('Erro ao criar aula');
     }
   };
 
@@ -901,62 +934,104 @@ export default function ProfessorDashboard() {
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-2xl font-bold mb-4 text-gray-800">Aulas Agendadas</h2>
             <div className="space-y-4">
-              {classes.map((class_) => {
-                const classDate = new Date(`${class_.date}T${class_.time}`);
-                const now = new Date();
-                const isActive = now >= new Date(classDate.getTime() - 60 * 60 * 1000) && 
-                              now <= new Date(classDate.getTime() + class_.duration * 60 * 1000);
+            {classes.map((class_) => {
+            // Criar data e hora da aula
+            const [year, month, day] = class_.date.split('-').map(Number);
+            const [hours, minutes] = class_.time.split(':').map(Number);
+            const classDate = new Date(year, month - 1, day, hours, minutes);
 
-                return (
-                  <div
-                    key={class_.id}
-                    className={`p-4 border rounded-lg ${
-                      isActive ? 'border-green-500 bg-green-50' : ''
+            // Data e hora atual
+            const now = new Date();
+
+            // Uma hora antes da aula
+            const oneHourBefore = new Date(classDate);
+            oneHourBefore.setHours(oneHourBefore.getHours() - 1);
+
+            // Horário de término
+            const classEndTime = new Date(classDate);
+            classEndTime.setMinutes(classEndTime.getMinutes() + class_.duration);
+
+            // Debug para ver os horários
+            console.log({
+              class: class_.title,
+              date: class_.date,
+              time: class_.time,
+              nowLocal: now.toLocaleString(),
+              classDateLocal: classDate.toLocaleString(),
+              oneHourBeforeLocal: oneHourBefore.toLocaleString(),
+              classEndTimeLocal: classEndTime.toLocaleString()
+            });
+
+            // Verifica se está no período ativo (entre 1h antes e o fim da aula)
+            const isActive = now >= oneHourBefore && now <= classEndTime;
+
+            return (
+              <div
+                key={class_.id}
+                className={`p-4 border rounded-lg ${
+                  isActive ? 'border-green-500 bg-green-50' : ''
+                }`}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold text-lg text-blue-600">{class_.title}</h3>
+                    <p className="text-gray-600">
+                      {new Date(classDate).toLocaleDateString('pt-BR')} às {class_.time}
+                    </p>
+                    <p className="text-gray-600">
+                      Duração: {class_.duration} minutos
+                    </p>
+                    <p className="text-gray-600">
+                      Check-ins: {class_.class_checkins?.length || 0}/{class_.max_students}
+                    </p>
+                    {/* Adicionado para debug */}
+                    <p className="text-xs text-gray-400">
+                      Check-in disponível a partir de: {oneHourBefore.toLocaleTimeString()}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      Término: {classEndTime.toLocaleTimeString()}
+                    </p>
+                  </div>
+                  <span
+                    className={`px-2 py-1 rounded-full text-sm ${
+                      isActive
+                        ? 'bg-green-100 text-green-800'
+                        : now > classEndTime
+                        ? 'bg-gray-100 text-gray-800'
+                        : now < oneHourBefore
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-blue-100 text-blue-800'
                     }`}
                   >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-bold text-lg text-blue-600">{class_.title}</h3>
-                        <p className="text-gray-600">
-                          {new Date(class_.date).toLocaleDateString()} às {class_.time}
-                        </p>
-                        <p className="text-gray-600">
-                          Duração: {class_.duration} minutos
-                        </p>
-                        <p className="text-gray-600">
-                          Check-ins: {class_.class_checkins?.length || 0}/{class_.max_students}
-                        </p>
-                      </div>
-                      <span
-                        className={`px-2 py-1 rounded-full text-sm ${
-                          isActive
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {isActive ? 'Em andamento' : 'Agendada'}
-                      </span>
-                    </div>
+                    {isActive 
+                      ? 'Em andamento'
+                      : now > classEndTime
+                      ? 'Encerrada'
+                      : now < oneHourBefore
+                      ? 'Agendada'
+                      : 'Em andamento'}
+                  </span>
+                </div>
 
-                    {/* Lista de check-ins */}
-                    {class_.class_checkins.length > 0 && (
-                      <div className="mt-4">
-                        <h4 className="font-medium text-gray-700 mb-2">Alunos presentes:</h4>
-                        <ul className="space-y-2">
-                          {class_.class_checkins.map((checkin) => (
-                            <li key={checkin.student_id} className="text-gray-600">
-                              {checkin.student.name} - Check-in:{' '}
-                              {new Date(checkin.checked_in_at).toLocaleTimeString()}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                {/* Lista de check-ins */}
+                {class_.class_checkins.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="font-medium text-gray-700 mb-2">Alunos presentes:</h4>
+                    <ul className="space-y-2">
+                      {class_.class_checkins.map((checkin) => (
+                        <li key={checkin.student_id} className="text-gray-600">
+                          {checkin.student.name} - Check-in:{' '}
+                          {new Date(checkin.checked_in_at).toLocaleTimeString()}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                );
-              })}
-            </div>
-          </div>
+                )}
+              </div>
+            );
+          })}
+  </div>
+</div>
         </div>
       )}
 

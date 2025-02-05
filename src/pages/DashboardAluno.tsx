@@ -910,11 +910,11 @@ export default function AlunoDashboard() {
                     isActive ? 'ring-2 ring-blue-500' : ''
                   }`}
                 >
-                  <div className="p-6">
+                  <div className="p-4 sm:p-6">
                     <div className="flex justify-between items-start">
-                      <div className="space-y-3">
+                      <div className="space-y-2 sm:space-y-3">
                         <h3 className="text-xl font-bold text-gray-900">{class_.title}</h3>
-                        <div className="space-y-2">
+                        <div className="space-y-1 sm:space-y-2">
                           <p className="flex items-center text-gray-600">
                             <Calendar className="w-4 h-4 mr-2" />
                             {classDate.toLocaleDateString()}
@@ -937,7 +937,7 @@ export default function AlunoDashboard() {
                         </div>
                       </div>
 
-                      <div className="flex flex-col items-end space-y-3">
+                      <div className="flex flex-col items-end space-y-2 sm:space-y-3">
                         <span
                           className={`px-4 py-2 rounded-full text-sm font-medium ${
                             isActive
@@ -967,7 +967,7 @@ export default function AlunoDashboard() {
                           <button
                             onClick={() => handleCheckin(class_.id)}
                             disabled={!isActive || isFull || now > classEndTime}
-                            className={`px-6 py-2 rounded-lg text-white font-medium transition-all duration-200 ${
+                            className={`px-4 py-2 rounded-lg text-white font-medium transition-all duration-200 ${
                               isActive && !isFull && now <= classEndTime
                                 ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
                                 : 'bg-gray-400 cursor-not-allowed'

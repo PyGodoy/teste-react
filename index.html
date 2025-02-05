@@ -37,13 +37,17 @@
               console.log('Usuário não adicionou à tela inicial');
             }
             deferredPrompt = null;
-            installBanner.style.display = 'none'; 
+            // Aplicando a animação de fade-out ao fechar o banner
+            installBanner.classList.add('fade-out');
+            setTimeout(() => {
+              installBanner.style.display = 'none'; 
+            }, 500); // Tempo para o fade-out terminar
           });
         });
 
         // Animação de desaparecimento após 5 segundos
         setTimeout(() => {
-          installBanner.style.opacity = 0;
+          installBanner.classList.add('fade-out');
           setTimeout(() => {
             installBanner.style.display = 'none';
           }, 500); // Tempo para o fade-out terminar
@@ -67,7 +71,7 @@
         document.body.appendChild(iosBanner);
 
         setTimeout(() => {
-          iosBanner.style.opacity = 0;
+          iosBanner.classList.add('fade-out');
           setTimeout(() => {
             iosBanner.style.display = 'none';
           }, 500);
@@ -91,7 +95,6 @@
         z-index: 1000;
         opacity: 0;
         display: none;
-        animation: fadeIn 1s forwards;
       }
 
       #install-btn {
@@ -120,13 +123,34 @@
         }
       }
 
+      /* Animação de fade-out */
+      @keyframes fadeOut {
+        0% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+      }
+
+      /* Aplica a animação de fade-in */
+      .fade-in {
+        animation: fadeIn 1s forwards;
+      }
+
+      /* Aplica a animação de fade-out */
+      .fade-out {
+        animation: fadeOut 1s forwards;
+      }
+
       /* Estilo para o banner de iOS */
       #ios-install-banner {
         background-color: #000;
         padding: 15px;
         text-align: center;
       }
-
     </style>
   </body>
 </html>

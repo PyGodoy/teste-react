@@ -151,7 +151,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md space-y-8 relative overflow-hidden">
+      <div className="bg-white p-4 md:p-8 rounded-2xl shadow-xl w-full max-w-md space-y-6 md:space-y-8 relative overflow-hidden">
         {/* Decorative elements */}
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
         <div className="absolute top-2 right-0 w-24 h-24 bg-blue-100 rounded-full -mr-12 -mt-12 opacity-50"></div>
@@ -159,12 +159,12 @@ export default function Login() {
 
         {/* Logo do clube */}
         <div className="flex justify-center">
-          <img src="/logo.png" alt="Logo do Clube" className="w-32 h-32 mb-4" />
+          <img src="/logo.png" alt="Logo do Clube" className="w-24 h-24 md:w-32 md:h-32 mb-4" />
         </div>
 
         <div className="text-center relative">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Bem-vindo de volta</h1>
-          <p className="text-gray-500">Continue sua jornada na natação</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Bem-vindo à Apanat</h1>
+          <p className="text-sm md:text-base text-gray-500">Continue sua jornada na natação</p>
         </div>
 
         {error && (
@@ -182,7 +182,7 @@ export default function Login() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6 relative">
+        <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6 relative">
           <div>
             <label className="block text-sm font-medium text-gray-700" htmlFor="email">
               Email
@@ -194,7 +194,7 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value.trim())}
-                className="pl-10 appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="pl-10 appearance-none block w-full px-3 py-2 md:py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
                 disabled={isLoading}
                 placeholder="seu@email.com"
@@ -213,7 +213,7 @@ export default function Login() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="pl-10 appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="pl-10 appearance-none block w-full px-3 py-2 md:py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
                 disabled={isLoading}
                 placeholder="••••••••"
@@ -237,7 +237,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transform transition-all duration-150 hover:scale-[1.02]"
+            className="w-full flex justify-center items-center py-2 md:py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transform transition-all duration-150 hover:scale-[1.02]"
           >
             {isLoading ? (
               <Loader2 className="animate-spin h-5 w-5" />

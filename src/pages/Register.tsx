@@ -34,6 +34,11 @@ export default function Register() {
         <div className="absolute top-2 right-0 w-24 h-24 bg-blue-100 rounded-full -mr-12 -mt-12 opacity-50"></div>
         <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-100 rounded-full -ml-16 -mb-16 opacity-50"></div>
 
+        {/* Logo do clube */}
+        <div className="flex justify-center">
+          <img src="/logo.png" alt="Logo do Clube" className="w-32 h-32 mb-4" />
+        </div>
+
         <div className="text-center relative">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Criar Conta</h1>
           <p className="text-gray-500">Comece sua jornada na natação hoje</p>

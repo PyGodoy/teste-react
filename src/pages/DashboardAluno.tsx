@@ -343,8 +343,8 @@ export default function AlunoDashboard() {
       return;
     }
 
-    const selectedDate = new Date(completionForm.completedDate);
-    selectedDate.setHours(0, 0, 0, 0);
+    // Ajusta a data para meio-dia do dia selecionado
+    const selectedDate = new Date(completionForm.completedDate + 'T12:00:00');
 
     const { error } = await supabase
       .from('attendances')

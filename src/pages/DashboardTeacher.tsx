@@ -413,9 +413,16 @@ export default function ProfessorDashboard() {
   const handleCreateTraining = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
+    // Ajusta a data para meio-dia do dia selecionado
+    const adjustedDate = new Date(newTraining.date + 'T12:00:00');
+    
     const { data, error } = await supabase
       .from('trainings')
-      .insert([{ ...newTraining, professor_id: user?.id }])
+      .insert([{ 
+        ...newTraining, 
+        date: adjustedDate.toISOString(), // Envia a data ajustada
+        professor_id: user?.id 
+      }])
       .select();
   
     if (error) {

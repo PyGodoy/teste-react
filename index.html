@@ -15,55 +15,53 @@
     <script>
       let deferredPrompt;
 
-      // Detecta se o dispositivo é iOS e se está rodando no Safari
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+
+        const installBanner = document.createElement('div');
+        installBanner.id = 'install-banner';
+        installBanner.innerHTML = `
+          <p>Adicione à tela inicial para acessar o app mais rápido!</p>
+          <button id="install-btn">Adicionar</button>
+        `;
+        document.body.appendChild(installBanner);
+
+        const installButton = document.getElementById('install-btn');
+        installButton.addEventListener('click', () => {
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+              console.log('Usuário adicionou à tela inicial');
+            } else {
+              console.log('Usuário não adicionou à tela inicial');
+            }
+            deferredPrompt = null;
+            // Aplicando a animação de fade-out ao fechar o banner
+            installBanner.classList.add('fade-out');
+            setTimeout(() => {
+              installBanner.style.display = 'none'; 
+            }, 500); // Tempo para o fade-out terminar
+          });
+        });
+
+        // Animação de desaparecimento após 5 segundos
+        setTimeout(() => {
+          installBanner.classList.add('fade-out');
+          setTimeout(() => {
+            installBanner.style.display = 'none';
+          }, 500); // Tempo para o fade-out terminar
+        }, 5000); 
+
+        // Exibe o banner com animação
+        installBanner.style.display = 'block';
+        installBanner.classList.add('fade-in');
+      });
+
       const isIOS = /iphone|ipod|ipad/i.test(navigator.userAgent);
       const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 
-      // Se for iOS, Safari, e NÃO for um app na tela inicial
-      if (isIOS && isSafari && !isStandalone) {
-        window.addEventListener('beforeinstallprompt', (e) => {
-          e.preventDefault();
-          deferredPrompt = e;
-
-          const installBanner = document.createElement('div');
-          installBanner.id = 'install-banner';
-          installBanner.innerHTML = `
-            <p>Adicione à tela inicial para acessar o app mais rápido!</p>
-            <button id="install-btn">Adicionar</button>
-          `;
-          document.body.appendChild(installBanner);
-
-          const installButton = document.getElementById('install-btn');
-          installButton.addEventListener('click', () => {
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then((choiceResult) => {
-              if (choiceResult.outcome === 'accepted') {
-                console.log('Usuário adicionou à tela inicial');
-              } else {
-                console.log('Usuário não adicionou à tela inicial');
-              }
-              deferredPrompt = null;
-              installBanner.classList.add('fade-out');
-              setTimeout(() => {
-                installBanner.style.display = 'none';
-              }, 500);
-            });
-          });
-
-          setTimeout(() => {
-            installBanner.classList.add('fade-out');
-            setTimeout(() => {
-              installBanner.style.display = 'none';
-            }, 500);
-          }, 5000);
-
-          installBanner.style.display = 'block';
-          installBanner.classList.add('fade-in');
-        });
-      }
-
-      // Detecta se o dispositivo está usando o Safari (iOS) para o banner de informações de PWA
       if (isIOS && isSafari && !isStandalone) {
         const iosBanner = document.createElement('div');
         iosBanner.id = 'ios-install-banner';
@@ -114,6 +112,7 @@
         background-color: #002fff;
       }
 
+      /* Animação de fade-in */
       @keyframes fadeIn {
         0% {
           opacity: 0;
@@ -125,6 +124,7 @@
         }
       }
 
+      /* Animação de fade-out */
       @keyframes fadeOut {
         0% {
           opacity: 1;
@@ -136,14 +136,17 @@
         }
       }
 
+      /* Aplica a animação de fade-in */
       .fade-in {
         animation: fadeIn 1s forwards;
       }
 
+      /* Aplica a animação de fade-out */
       .fade-out {
         animation: fadeOut 1s forwards;
       }
 
+      /* Estilo para o banner de iOS */
       #ios-install-banner {
         background-color: #000;
         padding: 15px;

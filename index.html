@@ -5,24 +5,20 @@
     <link rel="icon" type="image/png" href="/src/assets/images/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Apanat Treinamento</title>
-    <!-- Manifest do PWA -->
     <link rel="manifest" href="/manifest.json" />
   </head>
   <body>
     <div id="root"></div>
-    
+
     <script type="module" src="/src/main.tsx"></script>
 
-    <!-- Adicionando o código JavaScript do PWA -->
     <script>
       let deferredPrompt;
 
-      // Detecta o evento antes de instalar
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
 
-        // Exibe o banner de "Adicionar à Tela Inicial" no Android/Chrome
         const installBanner = document.createElement('div');
         installBanner.id = 'install-banner';
         installBanner.innerHTML = `
@@ -33,32 +29,35 @@
 
         const installButton = document.getElementById('install-btn');
         installButton.addEventListener('click', () => {
-          deferredPrompt.prompt();  // Exibe o prompt para o usuário
+          deferredPrompt.prompt();
           deferredPrompt.userChoice.then((choiceResult) => {
             if (choiceResult.outcome === 'accepted') {
               console.log('Usuário adicionou à tela inicial');
             } else {
               console.log('Usuário não adicionou à tela inicial');
             }
-            deferredPrompt = null;  // Reseta o evento
-            installBanner.style.display = 'none';  // Esconde o banner após a ação
+            deferredPrompt = null;
+            installBanner.style.display = 'none'; 
           });
         });
 
-        // Esconde o banner após 5 segundos
+        // Animação de desaparecimento após 5 segundos
         setTimeout(() => {
-          installBanner.style.display = 'none';
-        }, 5000);  // 5000 milissegundos = 5 segundos
+          installBanner.style.opacity = 0;
+          setTimeout(() => {
+            installBanner.style.display = 'none';
+          }, 500); // Tempo para o fade-out terminar
+        }, 5000); 
 
-        installBanner.style.display = 'block';  // Exibe o banner no Android/Chrome
+        // Exibe o banner com animação
+        installBanner.style.display = 'block';
+        installBanner.classList.add('fade-in');
       });
 
-      // Detecta se o dispositivo está usando o Safari (iOS)
       const isIOS = /iphone|ipod|ipad/i.test(navigator.userAgent);
       const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
       if (isIOS && isSafari) {
-        // Exibe o banner de PWA para o iOS
         const iosBanner = document.createElement('div');
         iosBanner.id = 'ios-install-banner';
         iosBanner.innerHTML = `
@@ -67,18 +66,22 @@
         `;
         document.body.appendChild(iosBanner);
 
-        // Esconde o banner após 5 segundos
         setTimeout(() => {
-          iosBanner.style.display = 'none';
-        }, 10000);  // 5000 milissegundos = 5 segundos
+          iosBanner.style.opacity = 0;
+          setTimeout(() => {
+            iosBanner.style.display = 'none';
+          }, 500);
+        }, 10000);
+
+        iosBanner.style.display = 'block';
+        iosBanner.classList.add('fade-in');
       }
     </script>
 
-    <!-- Estilos para o banner -->
     <style>
-      #install-banner {
+      #install-banner, #ios-install-banner {
         position: fixed;
-        top: 0; /* Coloca o banner no topo */
+        top: 0;
         left: 0;
         right: 0;
         background-color: #333;
@@ -86,6 +89,9 @@
         padding: 10px;
         text-align: center;
         z-index: 1000;
+        opacity: 0;
+        display: none;
+        animation: fadeIn 1s forwards;
       }
 
       #install-btn {
@@ -102,17 +108,25 @@
         background-color: #002fff;
       }
 
+      /* Animação de fade-in */
+      @keyframes fadeIn {
+        0% {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Estilo para o banner de iOS */
       #ios-install-banner {
-        position: fixed;
-        top: 0; /* Coloca o banner no topo */
-        left: 0;
-        right: 0;
         background-color: #000;
-        color: #fff;
         padding: 15px;
         text-align: center;
-        z-index: 1000;
       }
+
     </style>
   </body>
 </html>

@@ -12,7 +12,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { Activity, Award, Calendar, CheckCircle, Clock, Timer, Users } from 'lucide-react';
+import { Activity, AlertTriangle, Award, Calendar, CheckCircle, Clock, Timer, Users } from 'lucide-react';
 
 interface Training {
   id: number;
@@ -46,8 +46,9 @@ interface Class {
   time: string;
   duration: number;
   max_students: number;
+  status: 'active' | 'cancelled';
   created_at: string;
-  professor: {  // Aqui está esperando professor
+  professor: {
     name: string;
   };
   class_checkins: {
@@ -902,12 +903,17 @@ export default function AlunoDashboard() {
                 checkin => checkin.student_id === user?.id
               );
               const isFull = class_.class_checkins?.length >= class_.max_students;
+              const isCancelled = class_.status === 'cancelled';
 
               return (
                 <div
                   key={class_.id}
-                  className={`bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md transition-all duration-300 hover:shadow-lg ${
-                    isActive ? 'ring-2 ring-blue-500' : ''
+                  className={`bg-gradient-to-br ${
+                    isCancelled
+                      ? 'from-red-50 to-red-100 border-2 border-red-300'
+                      : 'from-white to-gray-50'
+                  } rounded-xl shadow-md transition-all duration-300 hover:shadow-lg ${
+                    isActive && !isCancelled ? 'ring-2 ring-blue-500' : ''
                   }`}
                 >
                   <div className="p-4 sm:p-6">
@@ -940,7 +946,9 @@ export default function AlunoDashboard() {
                       <div className="flex flex-col items-end space-y-2 sm:space-y-3">
                         <span
                           className={`px-4 py-2 rounded-full text-sm font-medium ${
-                            isActive
+                            isCancelled
+                              ? 'bg-red-100 text-red-800'
+                              : isActive
                               ? 'bg-green-100 text-green-800'
                               : now > classEndTime
                               ? 'bg-gray-100 text-gray-800'
@@ -949,12 +957,14 @@ export default function AlunoDashboard() {
                               : 'bg-blue-100 text-blue-800'
                           }`}
                         >
-                          {isActive 
+                          {isCancelled 
+                            ? 'Aula Cancelada'
+                            : isActive 
                             ? 'Check-in Disponível' 
                             : now > classEndTime
                             ? 'Encerrada'
                             : now < oneHourBefore
-                            ? `Em breve`
+                            ? 'Em breve'
                             : 'Agendada'}
                         </span>
 
@@ -966,14 +976,16 @@ export default function AlunoDashboard() {
                         ) : (
                           <button
                             onClick={() => handleCheckin(class_.id)}
-                            disabled={!isActive || isFull || now > classEndTime}
+                            disabled={!isActive || isFull || now > classEndTime || isCancelled}
                             className={`px-4 py-2 rounded-lg text-white font-medium transition-all duration-200 ${
-                              isActive && !isFull && now <= classEndTime
+                              isActive && !isFull && !isCancelled && now <= classEndTime
                                 ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
                                 : 'bg-gray-400 cursor-not-allowed'
                             }`}
                           >
-                            {isFull 
+                            {isCancelled
+                              ? 'Aula cancelada'
+                              : isFull 
                               ? 'Aula lotada' 
                               : now > classEndTime
                               ? 'Aula encerrada'
@@ -985,11 +997,20 @@ export default function AlunoDashboard() {
                       </div>
                     </div>
 
-                    {hasCheckedIn && (
+                    {hasCheckedIn && !isCancelled && (
                       <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100">
                         <p className="text-green-700 flex items-center">
                           <CheckCircle className="w-5 h-5 mr-2" />
                           Presença confirmada! Não se esqueça do horário da aula.
+                        </p>
+                      </div>
+                    )}
+
+                    {isCancelled && (
+                      <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                        <p className="text-red-700 flex items-center">
+                          <AlertTriangle className="w-5 h-5 mr-2" />
+                          Esta aula foi cancelada. Entre em contato com o professor para mais informações.
                         </p>
                       </div>
                     )}

@@ -317,7 +317,7 @@ export default function ProfessorDashboard() {
     };
 
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Seção de Informações */}
       <div className="rounded-lg bg-gradient-to-br from-blue-50 to-white p-6 shadow-md">
           <div className="mb-6">

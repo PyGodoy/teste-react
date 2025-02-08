@@ -27,7 +27,6 @@ export default function Dashboard() {
                   e.currentTarget.src = '/fallback-logo.png'; // ou alguma outra imagem de fallback
                 }}
               />
-              <h1 className="text-xl font-bold">Apanat</h1>
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex items-center">

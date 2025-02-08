@@ -3,7 +3,7 @@ import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { StudentProfile } from '../types';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { AlertTriangle, Calendar, CheckCircle, ChevronDown, ChevronUp, Clock, Timer, Users } from 'lucide-react';
+import { AlertTriangle, Bell, Calendar, CheckCircle, ChevronDown, ChevronUp, Clock, Info, Mail, MapPin, Phone, Timer, Users } from 'lucide-react';
 
 interface Training {
   id: number;
@@ -99,12 +99,17 @@ interface PerformanceData {
   displayTime: string;
 }
 
+interface Notice {
+  message: string;
+  created_at: string;
+}
+
 export default function ProfessorDashboard() {
   const { user } = useAuthStore();
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [students, setStudents] = useState<StudentProfile[]>([]);
-  const [activeTab, setActiveTab] = useState<'trainings' | 'students' | 'attendance' | 'classes'>('trainings');
+  const [activeTab, setActiveTab] = useState<'trainings' | 'students' | 'attendance' | 'classes' | 'info' >('trainings');
   const [newTraining, setNewTraining] = useState<Partial<Training>>({
     title: '',
     description: '',
@@ -270,6 +275,145 @@ export default function ProfessorDashboard() {
       fetchClasses();
     }
   }, [user]);
+
+  const InfoTab = () => {
+    const [notices, setNotices] = useState<{ message: string; created_at: string }[]>([]);
+    const [newNotice, setNewNotice] = useState('');
+  
+    // Carregar avisos ao carregar o componente
+    useEffect(() => {
+      const fetchNotices = async () => {
+        const { data, error } = await supabase
+          .from('notices')
+          .select()
+          .order('created_at', { ascending: false }); // Ordena para mostrar os mais recentes primeiro
+  
+        if (error) {
+          console.error('Erro ao carregar avisos:', error);
+        } else {
+          setNotices(data);
+        }
+      };
+  
+      fetchNotices();
+    }, []); // A dependência vazia faz com que a função seja executada apenas uma vez, ao montar o componente.
+  
+    // Função para adicionar avisos
+    const handleAddNotice = async () => {
+      if (newNotice.trim()) {
+        const { data, error } = await supabase
+          .from('notices')
+          .insert([{ message: newNotice, professor_id: user?.id }])
+          .select();
+  
+        if (error) {
+          console.error('Erro ao adicionar aviso:', error);
+        } else if (data.length > 0) {
+          // Adiciona o novo aviso ao estado, mantendo os antigos
+          setNotices([{ message: newNotice, created_at: data[0].created_at }, ...notices]);
+          setNewNotice('');
+        }
+      }
+    };
+
+    return (
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Seção de Informações */}
+      <div className="rounded-lg bg-gradient-to-br from-blue-50 to-white p-6 shadow-md">
+          <div className="mb-6">
+              <h2 className="flex items-center gap-2 text-2xl font-bold text-blue-600">
+                  <Info className="h-6 w-6" />
+                  Informações da Apanat
+              </h2>
+          </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="flex items-center gap-3 p-4 rounded-lg bg-white shadow-sm transition-all hover:shadow-md">
+          <div className="bg-blue-100 p-3 rounded-full shrink-0">
+            <Phone className="h-6 w-6 text-blue-600" />
+                </div>
+              <div>
+                <p className="text-sm text-gray-500">Contato</p>
+                <p className="font-medium">(63) 99215-6443</p>
+              </div>
+                </div>
+        <div className="flex items-start gap-3 p-4 rounded-lg bg-white shadow-sm transition-all hover:shadow-md">
+          <div className="bg-blue-100 p-3 rounded-full shrink-0">
+              <Mail className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="min-w-0">
+                <p className="text-sm text-gray-500">Email</p>
+                <p className="font-medium break-words">clubeapanat@gmail.com</p>
+              </div>
+          </div>
+          <div className="flex items-start gap-3 p-4 rounded-lg bg-white shadow-sm transition-all hover:shadow-md">
+            <div className="bg-blue-100 p-3 rounded-full shrink-0">
+              <MapPin className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Endereço</p>
+                <p className="font-medium">206 Norte, Piscina Colégio Militar</p>
+                <p className="text-sm text-gray-500">Palmas, TO - 77006244</p>
+                </div>
+            </div>
+          </div>
+      </div>
+
+            {/* Seção do Quadro de Avisos */}
+            <div className="rounded-lg bg-gradient-to-br from-blue-50 to-white p-6 shadow-md mt-8">
+                <div className="mb-6">
+                    <h2 className="flex items-center gap-2 text-2xl font-bold text-blue-600">
+                        <Bell className="h-6 w-6" />
+                        Quadro de Avisos
+                    </h2>
+                </div>
+                <div className="space-y-4">
+                    {/* Campo para adicionar novo aviso */}
+                    <div className="flex space-x-2">
+                        <input
+                            type="text"
+                            value={newNotice}
+                            onChange={(e) => setNewNotice(e.target.value)}
+                            className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Adicionar novo aviso..."
+                        />
+                        <button
+                            onClick={handleAddNotice}
+                            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center"
+                        >
+                            <span>Adicionar</span>
+                        </button>
+                    </div>
+
+                    {/* Lista de avisos */}
+                    <div className="space-y-4">
+                    {notices.length > 0 ? (
+                        notices.map((notice, index) => (
+                            <div
+                                key={index}
+                                className="p-6 rounded-lg bg-white shadow-sm border-l-4 border-blue-500 transition-all hover:shadow-md"
+                            >
+                                <p className="text-gray-800">{notice.message}</p>
+                                <p className="text-sm text-gray-500 mt-2">
+                                    {new Date(notice.created_at).toLocaleDateString('pt-BR', {
+                                        day: '2-digit',
+                                        month: 'long',
+                                        year: 'numeric'
+                                    })}
+                                </p>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center py-12">
+                            <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                            <p className="text-gray-600">Nenhum aviso no momento.</p>
+                        </div>
+                    )}
+                </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
   const fetchStudentPerformance = async (studentId: string) => {
     const { data, error } = await supabase
@@ -865,50 +1009,59 @@ return (
         <h1 className="text-3xl font-bold text-center mb-8 text-blue-600">Área do Professor</h1>
 
         <div className="max-w-7xl mx-auto mb-8">
-            <div className="border-b border-gray-200">
-                <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto whitespace-nowrap">
-                    <button
-                        onClick={() => setActiveTab('trainings')}
-                        className={`${
-                            activeTab === 'trainings'
-                                ? 'border-blue-500 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-                    >
-                        Treinos
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('students')}
-                        className={`${
-                            activeTab === 'students'
-                                ? 'border-blue-500 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-                    >
-                        Gerenciar Alunos
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('attendance')}
-                        className={`${
-                            activeTab === 'attendance'
-                                ? 'border-blue-500 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-                    >
-                        Frequência
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('classes')}
-                        className={`${
-                            activeTab === 'classes'
-                                ? 'border-blue-500 text-blue-600'
-                                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                        } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
-                    >
-                        Classes
-                    </button>
-                </nav>
-            </div>
+        <nav className="-mb-px flex space-x-4 sm:space-x-8 overflow-x-auto whitespace-nowrap">
+        <button
+            onClick={() => setActiveTab('trainings')}
+            className={`${
+                activeTab === 'trainings'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+        >
+            Treinos
+        </button>
+        <button
+            onClick={() => setActiveTab('students')}
+            className={`${
+                activeTab === 'students'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+        >
+            Gerenciar Alunos
+        </button>
+        <button
+            onClick={() => setActiveTab('attendance')}
+            className={`${
+                activeTab === 'attendance'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+        >
+            Frequência
+        </button>
+        <button
+            onClick={() => setActiveTab('classes')}
+            className={`${
+                activeTab === 'classes'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+        >
+            Classes
+        </button>
+        <button
+            onClick={() => setActiveTab('info')}
+            className={`${
+                activeTab === 'info'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+        >
+            Informações
+        </button>
+    </nav>
+            
         </div>
 
         {activeTab === 'classes' && (
@@ -1440,6 +1593,7 @@ return (
                 ))}
             </div>
         )}
+        {activeTab === 'info' && <InfoTab />}
         {showProfileModal && <StudentProfileModal />}
     </div>
 );

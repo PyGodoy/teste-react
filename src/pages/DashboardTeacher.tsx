@@ -121,7 +121,7 @@ export default function ProfessorDashboard() {
     date: '',
     time: '',
     duration: 60,
-    max_students: 10
+    max_students: 20
   });
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);

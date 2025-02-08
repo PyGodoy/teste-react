@@ -12,7 +12,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
-import { Activity, AlertTriangle, Award, Calendar, CheckCircle, Clock, Timer, Users } from 'lucide-react';
+import { Activity, AlertTriangle, Award, Calendar, CheckCircle, ChevronDown, ChevronUp, Clock, Timer, Users } from 'lucide-react';
 
 interface Training {
   id: number;
@@ -96,6 +96,63 @@ export default function AlunoDashboard() {
       default:
         return '';
     }
+  };
+  const [expandedClasses, setExpandedClasses] = useState<number[]>([]);
+
+  const toggleClassStudents = (classId: number) => {
+    setExpandedClasses(prev => 
+      prev.includes(classId) 
+        ? prev.filter(id => id !== classId)
+        : [...prev, classId]
+    );
+  };
+
+
+  interface StudentNameProps {
+    studentId: string;
+  }
+  
+  function StudentName({ studentId }: StudentNameProps) {
+    const [studentName, setStudentName] = useState<string | null>(null);
+    
+    // Cache para armazenar os nomes dos alunos
+    const [cache, setCache] = useState<Record<string, string>>({});
+  
+    useEffect(() => {
+      const fetchNames = async () => {
+        // Se o nome do aluno já estiver no cache, apenas retorna ele
+        if (cache[studentId]) {
+          setStudentName(cache[studentId]);
+          return;
+        }
+  
+        // Caso contrário, faz a requisição
+        const names = await fetchStudentNames([studentId]);
+        const name = names[0]?.name || studentId;
+  
+        // Armazena o nome no cache
+        setCache((prevCache) => ({ ...prevCache, [studentId]: name }));
+        setStudentName(name);
+      };
+  
+      fetchNames();
+    }, [studentId, cache]); // Dependência de cache para atualizar quando necessário
+  
+    return <span>{studentName || 'Carregando...'}</span>;
+  }
+
+  const fetchStudentNames = async (studentIds: string[]) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, name')
+      .in('id', studentIds);
+  
+    if (error) {
+      console.error('Erro ao buscar nomes dos alunos:', error);
+      return [];
+    }
+  
+    return data;
   };
 
   const fetchClasses = async () => {
@@ -904,6 +961,7 @@ export default function AlunoDashboard() {
               );
               const isFull = class_.class_checkins?.length >= class_.max_students;
               const isCancelled = class_.status === 'cancelled';
+              const isExpanded = expandedClasses.includes(class_.id);
 
               return (
                 <div
@@ -936,10 +994,29 @@ export default function AlunoDashboard() {
                             <Timer className="w-4 h-4 mr-2" />
                             {class_.duration} minutos
                           </p>
-                          <p className="flex items-center text-gray-600">
-                            <Users className="w-4 h-4 mr-2" />
-                            {class_.class_checkins?.length || 0}/{class_.max_students} vagas
-                          </p>
+                          <button
+                              onClick={() => toggleClassStudents(class_.id)}
+                              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+                            >
+                              <Users className="w-4 h-4 mr-2" />
+                              {class_.class_checkins?.length || 0}/{class_.max_students} vagas
+                              {isExpanded ? (
+                                <ChevronUp className="w-4 h-4 ml-1" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4 ml-1" />
+                              )}
+                            </button>
+                            {isExpanded && (
+                              <div className="mt-2 pl-6 space-y-1">
+                              <ul className="list-disc list-inside">
+                                {class_.class_checkins.map((checkin, index) => (
+                                  <li key={index} className="text-gray-600">
+                                    <StudentName studentId={checkin.student_id} />
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                            )}
                         </div>
                       </div>
 

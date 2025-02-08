@@ -3,7 +3,7 @@ import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { StudentProfile } from '../types';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { AlertTriangle, Calendar, CheckCircle, Clock, Timer, Users } from 'lucide-react';
+import { AlertTriangle, Calendar, CheckCircle, ChevronDown, ChevronUp, Clock, Timer, Users } from 'lucide-react';
 
 interface Training {
   id: number;
@@ -134,6 +134,15 @@ export default function ProfessorDashboard() {
     startDate: '',
     endDate: '',
   });
+  const [expandedClasses, setExpandedClasses] = useState<number[]>([]);
+
+  const toggleClassStudents = (classId: number) => {
+    setExpandedClasses(prev => 
+      prev.includes(classId) 
+        ? prev.filter(id => id !== classId)
+        : [...prev, classId]
+    );
+  };
 
   const fetchTrainings = async () => {
     const { data, error } = await supabase
@@ -968,72 +977,83 @@ return (
                 </form>
 
                 <div className="bg-white p-6 rounded-lg shadow-md">
-                    <h2 className="text-2xl font-bold mb-4 text-gray-800">Aulas Agendadas</h2>
-                    <div className="grid gap-6">
-                    {classes.map((class_) => {
-    const [year, month, day] = class_.date.split('-').map(Number);
-    const [hours, minutes] = class_.time.split(':').map(Number);
-    const classDate = new Date(year, month - 1, day, hours, minutes);
-    const now = new Date();
-    const oneHourBefore = new Date(classDate);
-    oneHourBefore.setHours(oneHourBefore.getHours() - 1);
-    const classEndTime = new Date(classDate);
-    classEndTime.setMinutes(classEndTime.getMinutes() + class_.duration);
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Aulas Agendadas</h2>
+            <div className="grid gap-6">
+              {classes.map((class_) => {
+                const [year, month, day] = class_.date.split('-').map(Number);
+                const [hours, minutes] = class_.time.split(':').map(Number);
+                const classDate = new Date(year, month - 1, day, hours, minutes);
+                const now = new Date();
+                const oneHourBefore = new Date(classDate);
+                oneHourBefore.setHours(oneHourBefore.getHours() - 1);
+                const classEndTime = new Date(classDate);
+                classEndTime.setMinutes(classEndTime.getMinutes() + class_.duration);
 
-    const isActive = now >= oneHourBefore && now <= classEndTime;
-    const hasCheckedIn = class_.class_checkins?.some(
-        checkin => checkin.student_id === user?.id
-    );
-    const isFull = class_.class_checkins?.length >= class_.max_students;
-    const isCancelled = class_.status === 'cancelled';
-    
-    // Verificação da data atual
-    const isToday = classDate.toDateString() === now.toDateString();
+                const isActive = now >= oneHourBefore && now <= classEndTime;
+                const isCancelled = class_.status === 'cancelled';
+                const isToday = classDate.toDateString() === now.toDateString();
+                const isExpanded = expandedClasses.includes(class_.id);
 
-    return (
-        <div
-            key={class_.id}
-            className={`bg-gradient-to-br ${
-                isCancelled
-                    ? 'from-red-50 to-red-100 border-2 border-red-300'
-                    : 'from-white to-gray-50'
-            } rounded-xl shadow-md transition-all duration-300 hover:shadow-lg ${
-                isActive && !isCancelled ? 'ring-2 ring-blue-500' : ''
-            }`}
-        >
-            <div className="p-4 sm:p-6">
-                <div className="flex justify-between items-start">
-                    <div className="space-y-2 sm:space-y-3">
-                        <h3 className="text-xl font-bold text-gray-900">{class_.title}</h3>
-                        <div className="space-y-1 sm:space-y-2">
+                return (
+                  <div
+                    key={class_.id}
+                    className={`bg-gradient-to-br ${
+                      isCancelled
+                        ? 'from-red-50 to-red-100 border-2 border-red-300'
+                        : 'from-white to-gray-50'
+                    } rounded-xl shadow-md transition-all duration-300 hover:shadow-lg ${
+                      isActive && !isCancelled ? 'ring-2 ring-blue-500' : ''
+                    }`}
+                  >
+                    <div className="p-4 sm:p-6">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-2 sm:space-y-3">
+                          <h3 className="text-xl font-bold text-gray-900">{class_.title}</h3>
+                          <div className="space-y-1 sm:space-y-2">
                             <p className="flex items-center text-gray-600">
-                                <Calendar className="w-4 h-4 mr-2" />
-                                {classDate.toLocaleDateString()}
+                              <Calendar className="w-4 h-4 mr-2" />
+                              {classDate.toLocaleDateString()}
                             </p>
                             <p className="flex items-center text-gray-600">
-                                <Clock className="w-4 h-4 mr-2" />
-                                {classDate.toLocaleTimeString([], { 
-                                    hour: '2-digit', 
-                                    minute: '2-digit' 
-                                })}
+                              <Clock className="w-4 h-4 mr-2" />
+                              {classDate.toLocaleTimeString([], { 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                              })}
                             </p>
                             <p className="flex items-center text-gray-600">
-                                <Timer className="w-4 h-4 mr-2" />
-                                {class_.duration} minutos
+                              <Timer className="w-4 h-4 mr-2" />
+                              {class_.duration} minutos
                             </p>
-                            <p className="flex items-center text-gray-600">
+                            <button
+                              onClick={() => toggleClassStudents(class_.id)}
+                              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+                            >
                               <Users className="w-4 h-4 mr-2" />
                               {class_.class_checkins?.length || 0}/{class_.max_students} vagas
-                          </p>
-                          <ul className="list-disc pl-5 text-gray-600">
-                              {class_.class_checkins.map(checkin => (
-                                  <li key={checkin.id}>
-                                      {checkin.student.name}
-                                  </li>
-                              ))}
-                          </ul>
+                              {isExpanded ? (
+                                <ChevronUp className="w-4 h-4 ml-1" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4 ml-1" />
+                              )}
+                            </button>
+                            {isExpanded && (
+                              <div className="mt-2 pl-6 space-y-1">
+                                {class_.class_checkins.length > 0 ? (
+                                  class_.class_checkins.map(checkin => (
+                                    <p key={checkin.id} className="text-gray-600">
+                                      • {checkin.student.name}
+                                    </p>
+                                  ))
+                                ) : (
+                                  <p className="text-gray-500 italic">
+                                    Nenhum aluno inscrito
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                    </div>
 
                     <div className="flex flex-col items-end space-y-2 sm:space-y-3">
                         <span
@@ -1076,15 +1096,6 @@ return (
                         )}
                     </div>
                 </div>
-
-                {hasCheckedIn && !isCancelled && (
-                    <div className="mt-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-100">
-                        <p className="text-green-700 flex items-center">
-                            <CheckCircle className="w-5 h-5 mr-2" />
-                            Presença confirmada! Não se esqueça do horário da aula.
-                        </p>
-                    </div>
-                )}
 
                 {isCancelled && (
                     <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">

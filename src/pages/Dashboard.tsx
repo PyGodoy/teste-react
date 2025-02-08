@@ -43,7 +43,9 @@ export default function Dashboard() {
                   }
                 }}
               />
-                <span className="truncate max-w-[200px]">Olá, {user.name}</span>
+              <span className="truncate max-w-[150px] sm:max-w-[200px] text-ellipsis overflow-hidden">
+                Olá, {user.name.split(' ')[0]} {/* Exibe apenas o primeiro nome */}
+              </span>
               </div>
               <button
                 onClick={signOut}

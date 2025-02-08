@@ -3,7 +3,17 @@ export interface User {
   email: string;
   name: string;
   role: 'professor' | 'aluno';
-  is_authorized?: boolean;
+  avatar_url?: string | null;  // Aqui está com null
+}
+
+export interface Profile {
+  id: string;
+  email: string;
+  name: string;
+  role: 'professor' | 'aluno';
+  avatar_url?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Training {

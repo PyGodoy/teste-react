@@ -9,11 +9,47 @@ interface AuthState {
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
   initialize: () => Promise<void>;
+  updateUser: (userData: Partial<User>) => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   loading: true,
+
+  updateUser: async (userData: Partial<User>) => {
+    try {
+      const currentUser = get().user;
+      if (!currentUser) {
+        throw new Error('Nenhum usuário logado');
+      }
+
+      // Atualiza o perfil no Supabase
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          ...userData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', currentUser.id);
+
+      if (updateError) {
+        throw new Error(`Erro ao atualizar perfil: ${updateError.message}`);
+      }
+
+      // Atualiza o estado local
+      set({
+        user: {
+          ...currentUser,
+          ...userData
+        }
+      });
+
+    } catch (error) {
+      console.error('Erro ao atualizar usuário:', error);
+      throw error;
+    }
+  },
+
   signIn: async (email: string, password: string) => {
     try {
       console.log('Iniciando processo de login');
@@ -59,7 +95,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   
       const profile = profiles[0];
   
-      // Verifica se o email é o específico do professor
       if (email.trim() === 'godoyvitorio99@gmail.com') {
         console.log('Email do professor detectado, definindo role como professor');
         profile.role = 'professor';
@@ -73,6 +108,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           email: profile.email,
           name: profile.name,
           role: profile.role,
+          avatar_url: profile.avatar_url
         }
       });
   
@@ -82,6 +118,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       throw error;
     }
   },
+
   signUp: async (email: string, password: string, name: string) => {
     try {
       const { data: { user }, error: signUpError } = await supabase.auth.signUp({
@@ -94,7 +131,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   
       console.log('Usuário criado, verificando perfil existente para ID:', user.id);
   
-      // Verificar se já existe um perfil
       const { data: existingProfile } = await supabase
         .from('profiles')
         .select('*')
@@ -113,7 +149,8 @@ export const useAuthStore = create<AuthState>((set) => ({
             id: user.id,
             email: email.trim(),
             name: name.trim(),
-            role: 'aluno'
+            role: 'aluno',
+            avatar_url: null
           }
         ]);
   
@@ -128,10 +165,12 @@ export const useAuthStore = create<AuthState>((set) => ({
       throw error;
     }
   },
+
   signOut: async () => {
     await supabase.auth.signOut();
     set({ user: null });
   },
+
   initialize: async () => {
     try {
       console.log('Iniciando verificação de sessão');
@@ -153,6 +192,7 @@ export const useAuthStore = create<AuthState>((set) => ({
               email: profile.email,
               name: profile.name,
               role: profile.role,
+              avatar_url: profile.avatar_url
             }
           });
         }

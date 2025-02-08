@@ -72,7 +72,11 @@ export default function AlunoDashboard() {
   const [expandedWeeks, setExpandedWeeks] = useState<string[]>([]);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<ActiveTab>('trainings');
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    // Tenta recuperar a aba salva do localStorage, se não existir usa 'trainings'
+    const savedTab = localStorage.getItem('activeTab');
+    return (savedTab as ActiveTab) || 'trainings';
+  });
   const [classes, setClasses] = useState<Class[]>([]);
   const [completionForm, setCompletionForm] = useState<CompletionForm>({
     trainingId: null,
@@ -240,6 +244,10 @@ export default function AlunoDashboard() {
       fetchClasses();
     }
   };
+
+  useEffect(() => {
+    localStorage.setItem('activeTab', activeTab);
+  }, [activeTab]);
 
   // useEffect para carregar as aulas
   useEffect(() => {

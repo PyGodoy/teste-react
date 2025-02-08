@@ -135,6 +135,7 @@ export default function ProfessorDashboard() {
     endDate: '',
   });
   const [expandedClasses, setExpandedClasses] = useState<number[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const toggleClassStudents = (classId: number) => {
     setExpandedClasses(prev => 
@@ -1123,57 +1124,70 @@ return (
             </div>
         )}
 
-        {activeTab === 'students' && (
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="bg-white shadow overflow-hidden sm:rounded-md">
-                    <ul className="divide-y divide-gray-200">
-                        {students.map((student) => (
-                            <li key={student.id}>
-                                <div className="px-4 py-4 sm:px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between">
-                                    <div className="flex flex-col">
-                                        <span className="text-sm font-medium text-gray-900">{student.name}</span>
-                                        <span className="text-sm text-gray-500">{student.email}</span>
-                                        <span className="text-xs text-gray-400">
-                                            Cadastrado em: {new Date(student.created_at).toLocaleDateString()}
-                                        </span>
-                                    </div>
-                                    <div className="mt-2 sm:mt-0 flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                                        <span className={`px-2 py-1 text-xs rounded-full ${
-                                            student.is_authorized
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-yellow-100 text-yellow-800'
-                                        }`}>
-                                            {student.is_authorized ? 'Autorizado' : 'Pendente'}
-                                        </span>
-                                        <button
-                                            onClick={() => {
-                                                setSelectedStudent(student);
-                                                setShowProfileModal(true);
-                                                fetchStudentPerformance(student.id);
-                                                fetchStudentSwimmingTimes(student.id);
-                                            }}
-                                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm"
-                                        >
-                                            Visualizar Perfil
-                                        </button>
-                                        <button
-                                            onClick={() => handleAuthorizeStudent(student.id, !student.is_authorized)}
-                                            className={`px-4 py-2 rounded-lg text-white text-sm font-medium ${
-                                                student.is_authorized
-                                                    ? 'bg-red-500 hover:bg-red-600'
-                                                    : 'bg-green-500 hover:bg-green-600'
-                                            } transition-colors`}
-                                        >
-                                            {student.is_authorized ? 'Desautorizar' : 'Autorizar'}
-                                        </button>
-                                    </div>
+{activeTab === 'students' && (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-4">
+            <input
+                type="text"
+                placeholder="Pesquisar por nome do aluno..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+        </div>
+        <div className="bg-white shadow overflow-hidden sm:rounded-md">
+            <ul className="divide-y divide-gray-200">
+                {students
+                    .filter((student) =>
+                        student.name.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map((student) => (
+                        <li key={student.id}>
+                            <div className="px-4 py-4 sm:px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-medium text-gray-900">{student.name}</span>
+                                    <span className="text-sm text-gray-500">{student.email}</span>
+                                    <span className="text-xs text-gray-400">
+                                        Cadastrado em: {new Date(student.created_at).toLocaleDateString()}
+                                    </span>
                                 </div>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </div>
-        )}
+                                <div className="mt-2 sm:mt-0 flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                                    <span className={`px-2 py-1 text-xs rounded-full ${
+                                        student.is_authorized
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-yellow-100 text-yellow-800'
+                                    }`}>
+                                        {student.is_authorized ? 'Autorizado' : 'Pendente'}
+                                    </span>
+                                    <button
+                                        onClick={() => {
+                                            setSelectedStudent(student);
+                                            setShowProfileModal(true);
+                                            fetchStudentPerformance(student.id);
+                                            fetchStudentSwimmingTimes(student.id);
+                                        }}
+                                        className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm"
+                                    >
+                                        Visualizar Perfil
+                                    </button>
+                                    <button
+                                        onClick={() => handleAuthorizeStudent(student.id, !student.is_authorized)}
+                                        className={`px-4 py-2 rounded-lg text-white text-sm font-medium ${
+                                            student.is_authorized
+                                                ? 'bg-red-500 hover:bg-red-600'
+                                                : 'bg-green-500 hover:bg-green-600'
+                                        } transition-colors`}
+                                    >
+                                        {student.is_authorized ? 'Desautorizar' : 'Autorizar'}
+                                    </button>
+                                </div>
+                            </div>
+                        </li>
+                    ))}
+            </ul>
+        </div>
+    </div>
+)}
 
         {activeTab === 'trainings' && (
             <>

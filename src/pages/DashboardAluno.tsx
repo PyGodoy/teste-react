@@ -221,7 +221,7 @@ export default function AlunoDashboard() {
 
   useEffect(() => {
     const channel = supabase
-      .channel('custom-update-channel')
+      .channel('custom-update-channel-classes')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'classes' },
@@ -241,7 +241,7 @@ export default function AlunoDashboard() {
 
   useEffect(() => {
     const channel = supabase
-      .channel('custom-update-channel')
+      .channel('custom-update-channel-trainings')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'trainings' },
@@ -261,7 +261,7 @@ export default function AlunoDashboard() {
 
   useEffect(() => {
     const channel = supabase
-      .channel('custom-update-channel')
+      .channel('custom-update-channel-notices')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'notices' },

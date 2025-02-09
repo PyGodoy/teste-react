@@ -864,36 +864,36 @@ const StudentProfileModal = () => {
                 <div className="mb-8">
                   <h3 className="text-xl font-semibold mb-4 text-blue-600">Melhores Tempos</h3>
                   <div className="bg-gray-50 p-4 rounded-lg">
-                      {studentSwimmingTimes.length > 0 ? (
-                          <div className="overflow-x-auto">
-                              <table className="min-w-full">
-                                  <thead>
-                                      <tr>
-                                          <th className="px-4 py-2 text-left">Distância</th>
-                                          <th className="px-4 py-2 text-left">Estilo</th>
-                                          <th className="px-4 py-2 text-left">Tempo</th>
-                                      </tr>
-                                  </thead>
-                                  <tbody>
-                                      {studentSwimmingTimes.map((time) => (
-                                          <tr key={time.id} className="hover:bg-gray-100">
-                                              <td className="px-4 py-2">{time.distance}</td>
-                                              <td className="px-4 py-2">
-                                                  {time.style.charAt(0).toUpperCase() + time.style.slice(1)}
-                                              </td>
-                                              <td className="px-4 py-2 font-medium">{formatTime(time.time_seconds)}</td>
-                                          </tr>
-                                      ))}
-                                  </tbody>
-                              </table>
-                          </div>
-                      ) : (
-                          <p className="text-gray-600 text-center">
-                              Este aluno ainda não registrou nenhum tempo.
-                          </p>
-                      )}
+                    {studentSwimmingTimes.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full table-auto sm:max-w-xs md:max-w-sm lg:max-w-md">
+                          <thead>
+                            <tr>
+                              <th className="px-2 py-2 text-left text-sm">Distância</th>
+                              <th className="px-2 py-2 text-left text-sm">Estilo</th>
+                              <th className="px-2 py-2 text-left text-sm">Tempo</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {studentSwimmingTimes.map((time) => (
+                              <tr key={time.id} className="hover:bg-gray-100">
+                                <td className="px-2 py-2 text-sm">{time.distance}</td>
+                                <td className="px-2 py-2 text-sm">
+                                  {time.style.charAt(0).toUpperCase() + time.style.slice(1)}
+                                </td>
+                                <td className="px-2 py-2 text-sm font-medium">{formatTime(time.time_seconds)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <p className="text-gray-600 text-center">
+                        Este aluno ainda não registrou nenhum tempo.
+                      </p>
+                    )}
                   </div>
-              </div>
+                </div>
 
                 <div>
                     <h3 className="text-xl font-semibold mb-4 text-blue-600">Gráfico de Desempenho</h3>

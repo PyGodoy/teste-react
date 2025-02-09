@@ -154,42 +154,49 @@ const MyTimes: React.FC = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <h2 className="text-2xl font-bold mb-6 text-gray-800">Meus Tempos</h2>
-      <div>
-        <label className="block mb-2">
-          Metros:
-          <select
-            value={distance}
-            onChange={(e) => setDistance(e.target.value)}
-            className="block w-full mt-1 p-2 border rounded-lg"
-          >
-            <option value="50m">50m</option>
-            <option value="100m">100m</option>
-            <option value="200m">200m</option>
-            <option value="400m">400m</option>
-            <option value="800m">800m</option>
-            <option value="1500m">1500m</option>
-          </select>
-        </label>
-      </div>
-      <div>
-        <label className="block mb-2">
-          Estilo:
-          <select
-            value={style}
-            onChange={(e) => setStyle(e.target.value)}
-            className="block w-full mt-1 p-2 border rounded-lg"
-          >
-            <option value="crawl">Crawl</option>
-            <option value="costas">Costas</option>
-            <option value="peito">Peito</option>
-            <option value="borboleta">Borboleta</option>
-            <option value="medley">Medley</option>
-          </select>
-        </label>
-      </div>
-      <div className="flex space-x-4 mb-4">
+
+      {/* Formulário para adicionar/editar tempos */}
+      <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Metros:
+            </label>
+            <select
+              value={distance}
+              onChange={(e) => setDistance(e.target.value)}
+              className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="50m">50m</option>
+              <option value="100m">100m</option>
+              <option value="200m">200m</option>
+              <option value="400m">400m</option>
+              <option value="800m">800m</option>
+              <option value="1500m">1500m</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Estilo:
+            </label>
+            <select
+              value={style}
+              onChange={(e) => setStyle(e.target.value)}
+              className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="crawl">Crawl</option>
+              <option value="costas">Costas</option>
+              <option value="peito">Peito</option>
+              <option value="borboleta">Borboleta</option>
+              <option value="medley">Medley</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div className="flex space-x-4 mb-4">
         <label className="block flex-1">
           Minutos:
           <input
@@ -226,15 +233,21 @@ const MyTimes: React.FC = () => {
           />
         </label>
       </div>
-      <button
-        onClick={editingTimeId ? handleUpdateTime : handleAddTime}
-        className="mt-4 w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-        disabled={loading}
-      >
-        {loading ? 'Salvando...' : editingTimeId ? 'Atualizar' : 'Salvar'}
-      </button>
-      <h3 className="text-xl font-bold mt-6 text-gray-800">Tempos Salvos</h3>
-      <ul className="mt-4 space-y-2">
+      </div>
+
+        <button
+          onClick={editingTimeId ? handleUpdateTime : handleAddTime}
+          className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+          disabled={loading}
+        >
+          {loading ? 'Salvando...' : editingTimeId ? 'Atualizar' : 'Salvar'}
+        </button>
+      </div>
+
+      {/* Lista de tempos salvos */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h3 className="text-xl font-bold mb-4 text-gray-800">Tempos Salvos</h3>
+        <ul className="mt-4 space-y-2">
         {times.map((entry) => (
           <li key={entry.id} className="p-4 border rounded-lg bg-white flex justify-between items-center">
             <span>
@@ -257,6 +270,7 @@ const MyTimes: React.FC = () => {
           </li>
         ))}
       </ul>
+      </div>
     </div>
   );
 };

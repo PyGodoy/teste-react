@@ -133,7 +133,24 @@ const MyTimes: React.FC = () => {
     const min = Math.floor(timeInSeconds / 60);
     const sec = Math.floor(timeInSeconds % 60);
     const cent = Math.round((timeInSeconds - Math.floor(timeInSeconds)) * 100);
-    return `${min}:${sec < 10 ? '0' : ''}${sec}:${cent < 10 ? '0' : ''}${cent}`;
+  
+    // Para menos de 1 minuto, apenas mostra segundos e centésimos
+    if (min === 0) {
+      return `${sec < 10 ? `0${sec}` : sec}"${cent < 10 ? `0${cent}` : cent}`;
+    }
+  
+    // Para menos de 10 minutos, remove o 0 à frente
+    const formattedMin = min < 10 ? `${min}` : `${min}`;
+    const formattedSec = sec < 10 ? `0${sec}` : sec;
+    const formattedCent = cent < 10 ? `0${cent}` : cent;
+  
+    // Para 10 minutos ou mais, mantemos o formato completo
+    if (min >= 10) {
+      return `${formattedMin}'${formattedSec}"${formattedCent}`;
+    }
+  
+    // Para menos de 10 minutos mas mais de 0, mostra minutos sem o 0 à frente
+    return `${formattedMin}'${formattedSec}"${formattedCent}`;
   };
 
   return (

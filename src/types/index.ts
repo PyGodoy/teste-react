@@ -47,7 +47,7 @@ export interface SwimmingTime {
   id: string;
   student_id: string;
   distance: '50m' | '100m' | '200m' | '400m' | '800m' | '1500m';
-  style: 'crawl' | 'costas' | 'peito' | 'borboleta' | 'medley';
+  style: 'Crawl' | 'Costas' | 'Peito' | 'Borboleta' | 'Medley';
   time_seconds: number;
   created_at: string;
 }

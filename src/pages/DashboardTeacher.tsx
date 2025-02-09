@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { StudentProfile } from '../types';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { AlertTriangle, Bell, Calendar, CheckCircle, ChevronDown, ChevronUp, Clock, Info, Mail, MapPin, Phone, Timer, Users } from 'lucide-react';
+import moment from 'moment-timezone';
 
 interface Training {
   id: number;
@@ -104,19 +105,37 @@ interface Notice {
   created_at: string;
 }
 
+interface NewTrainingForm {
+  title: string;
+  description: string;
+  date: string;
+  duration: number; // duration é obrigatório
+  difficulty: string;
+}
+
 export default function ProfessorDashboard() {
   const { user } = useAuthStore();
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [students, setStudents] = useState<StudentProfile[]>([]);
-  const [activeTab, setActiveTab] = useState<'trainings' | 'students' | 'attendance' | 'classes' | 'info' >('trainings');
-  const [newTraining, setNewTraining] = useState<Partial<Training>>({
+  const [activeTab, setActiveTab] = useState<'trainings' | 'students' | 'attendance' | 'classes' | 'info'>(() => {
+    // Tenta recuperar a aba salva do localStorage, se não existir usa 'trainings'
+    const savedTab = localStorage.getItem('activeTab');
+    return (savedTab as 'trainings' | 'students' | 'attendance' | 'classes' | 'info') || 'trainings';
+  });
+
+  useEffect(() => {
+    // Salva o valor da aba ativa no localStorage sempre que ela mudar
+    localStorage.setItem('activeTab', activeTab);
+  }, [activeTab]);
+
+  const [newTraining, setNewTraining] = useState<NewTrainingForm>({
     title: '',
     description: '',
     date: '',
-    duration: 0,
+    duration: 0, // Valor padrão para duration
     difficulty: 'iniciante',
-  });
+});
   const [editingTraining, setEditingTraining] = useState<Training | null>(null);
   const [expandedWeeks, setExpandedWeeks] = useState<string[]>([]);
   const [expandedDates, setExpandedDates] = useState<string[]>([]);
@@ -125,7 +144,7 @@ export default function ProfessorDashboard() {
     title: '',
     date: '',
     time: '',
-    duration: 60,
+    duration: 0,
     max_students: 20
   });
   const [selectedStudent, setSelectedStudent] = useState<StudentProfile | null>(null);
@@ -142,6 +161,7 @@ export default function ProfessorDashboard() {
   const [expandedClasses, setExpandedClasses] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
 
+  
   const toggleClassStudents = (classId: number) => {
     setExpandedClasses(prev => 
       prev.includes(classId) 
@@ -269,6 +289,30 @@ export default function ProfessorDashboard() {
 
   useEffect(() => {
     if (user) {
+      fetchClasses(); // Busca as aulas ao carregar o componente
+  
+      // Configura uma assinatura em tempo real para a tabela 'class_checkins'
+      const subscription = supabase
+        .channel('custom-class-checkins-channel') // Nome do canal (pode ser qualquer nome único)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'class_checkins' },
+          (payload) => {
+            console.log('Mudança detectada na tabela class_checkins:', payload);
+            fetchClasses(); // Atualiza as aulas quando houver mudanças
+          }
+        )
+        .subscribe();
+  
+      // Limpa a assinatura quando o componente é desmontado
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
       fetchTrainings();
       fetchAttendance();
       fetchStudents();
@@ -276,17 +320,17 @@ export default function ProfessorDashboard() {
     }
   }, [user]);
 
-  const InfoTab = () => {
+ const InfoTab = () => {
     const [notices, setNotices] = useState<{ message: string; created_at: string }[]>([]);
     const [newNotice, setNewNotice] = useState('');
-  
+    
     // Carregar avisos ao carregar o componente
     useEffect(() => {
       const fetchNotices = async () => {
         const { data, error } = await supabase
           .from('notices')
           .select()
-          .order('created_at', { ascending: false }); // Ordena para mostrar os mais recentes primeiro
+          .order('created_at', { ascending: false });
   
         if (error) {
           console.error('Erro ao carregar avisos:', error);
@@ -296,24 +340,36 @@ export default function ProfessorDashboard() {
       };
   
       fetchNotices();
-    }, []); // A dependência vazia faz com que a função seja executada apenas uma vez, ao montar o componente.
+    }, []);
   
     // Função para adicionar avisos
     const handleAddNotice = async () => {
       if (newNotice.trim()) {
+        // Cria a data no horário local
+        const localDate = moment.tz('America/Sao_Paulo').format();
+    
         const { data, error } = await supabase
           .from('notices')
-          .insert([{ message: newNotice, professor_id: user?.id }])
+          .insert([{ message: newNotice, created_at: localDate }])
           .select();
-  
+    
         if (error) {
           console.error('Erro ao adicionar aviso:', error);
-        } else if (data.length > 0) {
-          // Adiciona o novo aviso ao estado, mantendo os antigos
-          setNotices([{ message: newNotice, created_at: data[0].created_at }, ...notices]);
+        } else if (data?.length > 0) {
+          setNotices((prevNotices) => [
+            { message: newNotice, created_at: data[0].created_at },
+            ...prevNotices,
+          ]);
           setNewNotice('');
         }
       }
+    };
+  
+    // Função para verificar se o aviso foi criado nas últimas 24 horas
+    const isRecent = (created_at: string) => {
+      const now = Date.now();
+      const noticeDate = new Date(created_at).getTime();
+      return now - noticeDate < 24 * 60 * 60 * 1000;
     };
 
     return (
@@ -386,23 +442,25 @@ export default function ProfessorDashboard() {
 
                     {/* Lista de avisos */}
                     <div className="space-y-4">
-                    {notices.length > 0 ? (
+                      {notices.length > 0 ? (
                         notices.map((notice, index) => (
-                            <div
-                                key={index}
-                                className="p-6 rounded-lg bg-white shadow-sm border-l-4 border-blue-500 transition-all hover:shadow-md"
-                            >
-                                <p className="text-gray-800">{notice.message}</p>
-                                <p className="text-sm text-gray-500 mt-2">
-                                    {new Date(notice.created_at).toLocaleDateString('pt-BR', {
-                                        day: '2-digit',
-                                        month: 'long',
-                                        year: 'numeric'
-                                    })}
-                                </p>
-                            </div>
+                          <div
+                            key={index}
+                            className={`p-6 rounded-lg bg-white shadow-sm border-l-4 ${
+                              isRecent(notice.created_at) ? "border-blue-500" : "border-gray-300"
+                            } transition-all hover:shadow-md`}
+                          >
+                            <p className="text-gray-800">{notice.message}</p>
+                            <p className="text-sm text-gray-500 mt-2">
+                              {new Date(notice.created_at).toLocaleDateString("pt-BR", {
+                                day: "2-digit",
+                                month: "long",
+                                year: "numeric",
+                              })}
+                            </p>
+                          </div>
                         ))
-                    ) : (
+                      ) : (
                         <div className="text-center py-12">
                             <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                             <p className="text-gray-600">Nenhum aviso no momento.</p>
@@ -472,10 +530,23 @@ export default function ProfessorDashboard() {
   };
 
   const formatTime = (timeInSeconds: number): string => {
-    const minutes = Math.floor(timeInSeconds / 60);
-    const seconds = timeInSeconds % 60;
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-  };
+    const minutes = Math.floor(timeInSeconds / 60); // Calcula os minutos
+    const seconds = Math.floor(timeInSeconds % 60); // Calcula os segundos
+    const centiseconds = Math.round((timeInSeconds - Math.floor(timeInSeconds)) * 100); // Calcula os centésimos de segundo
+
+    // Caso o tempo seja inferior a 1 minuto, mostramos apenas segundos e centésimos
+    if (minutes === 0) {
+        return `${seconds < 10 ? `0${seconds}` : seconds}"${centiseconds < 10 ? `0${centiseconds}` : centiseconds}`;
+    }
+
+    // Caso o tempo seja inferior a 10 minutos, mostramos os minutos sem o zero à frente
+    if (minutes < 10) {
+        return `${minutes}'${seconds < 10 ? `0${seconds}` : seconds}"${centiseconds < 10 ? `0${centiseconds}` : centiseconds}`;
+    }
+
+    // Caso o tempo seja maior ou igual a 10 minutos, mostramos sempre com 2 dígitos para minutos
+    return `${minutes}'${seconds < 10 ? `0${seconds}` : seconds}"${centiseconds < 10 ? `0${centiseconds}` : centiseconds}`;
+};
 
   const filterDataByPeriod = (
     data: PerformanceData[], 
@@ -628,7 +699,7 @@ export default function ProfessorDashboard() {
         date: '',
         time: '',
         duration: 60,
-        max_students: 10
+        max_students: 20
       });
   
     } catch (err) {
@@ -791,38 +862,38 @@ const StudentProfileModal = () => {
                 </div>
 
                 <div className="mb-8">
-                    <h3 className="text-xl font-semibold mb-4 text-blue-600">Melhores Tempos</h3>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                        {studentSwimmingTimes.length > 0 ? (
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full">
-                                    <thead>
-                                        <tr>
-                                            <th className="px-4 py-2 text-left">Distância</th>
-                                            <th className="px-4 py-2 text-left">Estilo</th>
-                                            <th className="px-4 py-2 text-left">Tempo</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {studentSwimmingTimes.map((time) => (
-                                            <tr key={time.id} className="hover:bg-gray-100">
-                                                <td className="px-4 py-2">{time.distance}</td>
-                                                <td className="px-4 py-2">
-                                                    {time.style.charAt(0).toUpperCase() + time.style.slice(1)}
-                                                </td>
-                                                <td className="px-4 py-2 font-medium">{formatTime(time.time_seconds)}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ) : (
-                            <p className="text-gray-600 text-center">
-                                Este aluno ainda não registrou nenhum tempo.
-                            </p>
-                        )}
-                    </div>
-                </div>
+                  <h3 className="text-xl font-semibold mb-4 text-blue-600">Melhores Tempos</h3>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                      {studentSwimmingTimes.length > 0 ? (
+                          <div className="overflow-x-auto">
+                              <table className="min-w-full">
+                                  <thead>
+                                      <tr>
+                                          <th className="px-4 py-2 text-left">Distância</th>
+                                          <th className="px-4 py-2 text-left">Estilo</th>
+                                          <th className="px-4 py-2 text-left">Tempo</th>
+                                      </tr>
+                                  </thead>
+                                  <tbody>
+                                      {studentSwimmingTimes.map((time) => (
+                                          <tr key={time.id} className="hover:bg-gray-100">
+                                              <td className="px-4 py-2">{time.distance}</td>
+                                              <td className="px-4 py-2">
+                                                  {time.style.charAt(0).toUpperCase() + time.style.slice(1)}
+                                              </td>
+                                              <td className="px-4 py-2 font-medium">{formatTime(time.time_seconds)}</td>
+                                          </tr>
+                                      ))}
+                                  </tbody>
+                              </table>
+                          </div>
+                      ) : (
+                          <p className="text-gray-600 text-center">
+                              Este aluno ainda não registrou nenhum tempo.
+                          </p>
+                      )}
+                  </div>
+              </div>
 
                 <div>
                     <h3 className="text-xl font-semibold mb-4 text-blue-600">Gráfico de Desempenho</h3>
@@ -1100,16 +1171,21 @@ return (
                             />
                         </div>
                         <div>
-                            <label className="block text-gray-700 font-medium mb-2">Duração (minutos)</label>
-                            <input
-                                type="number"
-                                value={newClass.duration}
-                                onChange={(e) => setNewClass({ ...newClass, duration: parseInt(e.target.value) })}
-                                className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                required
-                                min="1"
-                            />
-                        </div>
+                        <label className="block text-gray-700 font-medium mb-2">Duração (horas)</label>
+                        <input
+                            type="number"
+                            value={newClass.duration / 60} // Converte minutos para horas
+                            onChange={(e) => {
+                                const hours = parseFloat(e.target.value); // Pega o valor em horas
+                                const minutes = hours * 60; // Converte horas para minutos
+                                setNewClass({ ...newClass, duration: minutes }); // Atualiza o estado com minutos
+                            }}
+                            className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                            min="0.1" // Permite valores fracionários (ex: 1.5 horas)
+                            step="0.1" // Define o incremento/decremento do input
+                        />
+                    </div>
                         <div>
                             <label className="block text-gray-700 font-medium mb-2">Máximo de Alunos</label>
                             <input
@@ -1133,144 +1209,154 @@ return (
                 <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-2xl font-bold mb-4 text-gray-800">Aulas Agendadas</h2>
             <div className="grid gap-6">
-              {classes.map((class_) => {
-                const [year, month, day] = class_.date.split('-').map(Number);
-                const [hours, minutes] = class_.time.split(':').map(Number);
-                const classDate = new Date(year, month - 1, day, hours, minutes);
-                const now = new Date();
-                const oneHourBefore = new Date(classDate);
-                oneHourBefore.setHours(oneHourBefore.getHours() - 1);
-                const classEndTime = new Date(classDate);
-                classEndTime.setMinutes(classEndTime.getMinutes() + class_.duration);
+            {classes
+  .filter((class_) => {
+    const [year, month, day] = class_.date.split('-').map(Number);
+    const classDate = new Date(year, month - 1, day);
+    const now = new Date();
+    // Remove a hora, minutos e segundos para comparar apenas as datas
+    now.setHours(0, 0, 0, 0);
+    return classDate >= now;
+  })
+  .map((class_) => {
+    const [year, month, day] = class_.date.split('-').map(Number);
+    const [hours, minutes] = class_.time.split(':').map(Number);
+    const classDate = new Date(year, month - 1, day, hours, minutes);
+    const now = new Date();
+    const oneHourBefore = new Date(classDate);
+    oneHourBefore.setHours(oneHourBefore.getHours() - 1);
+    const classEndTime = new Date(classDate);
+    classEndTime.setMinutes(classEndTime.getMinutes() + class_.duration);
 
-                const isActive = now >= oneHourBefore && now <= classEndTime;
-                const isCancelled = class_.status === 'cancelled';
-                const isToday = classDate.toDateString() === now.toDateString();
-                const isExpanded = expandedClasses.includes(class_.id);
+    // Verifica se a aula está em andamento
+    const isActive = now >= classDate && now <= classEndTime;
+    const isCancelled = class_.status === 'cancelled';
+    const isToday = classDate.toDateString() === now.toDateString();
+    const isExpanded = expandedClasses.includes(class_.id);
 
-                return (
-                  <div
-                    key={class_.id}
-                    className={`bg-gradient-to-br ${
-                      isCancelled
-                        ? 'from-red-50 to-red-100 border-2 border-red-300'
-                        : 'from-white to-gray-50'
-                    } rounded-xl shadow-md transition-all duration-300 hover:shadow-lg ${
-                      isActive && !isCancelled ? 'ring-2 ring-blue-500' : ''
-                    }`}
-                  >
-                    <div className="p-4 sm:p-6">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-2 sm:space-y-3">
-                          <h3 className="text-xl font-bold text-gray-900">{class_.title}</h3>
-                          <div className="space-y-1 sm:space-y-2">
-                            <p className="flex items-center text-gray-600">
-                              <Calendar className="w-4 h-4 mr-2" />
-                              {classDate.toLocaleDateString()}
-                            </p>
-                            <p className="flex items-center text-gray-600">
-                              <Clock className="w-4 h-4 mr-2" />
-                              {classDate.toLocaleTimeString([], { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
-                              })}
-                            </p>
-                            <p className="flex items-center text-gray-600">
-                              <Timer className="w-4 h-4 mr-2" />
-                              {class_.duration} minutos
-                            </p>
-                            <button
-                              onClick={() => toggleClassStudents(class_.id)}
-                              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
-                            >
-                              <Users className="w-4 h-4 mr-2" />
-                              {class_.class_checkins?.length || 0}/{class_.max_students} vagas
-                              {isExpanded ? (
-                                <ChevronUp className="w-4 h-4 ml-1" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4 ml-1" />
-                              )}
-                            </button>
-                            {isExpanded && (
-                              <div className="mt-2 pl-6 space-y-1">
-                                {class_.class_checkins.length > 0 ? (
-                                  class_.class_checkins.map(checkin => (
-                                    <p key={checkin.id} className="text-gray-600">
-                                      • {checkin.student.name}
-                                    </p>
-                                  ))
-                                ) : (
-                                  <p className="text-gray-500 italic">
-                                    Nenhum aluno inscrito
-                                  </p>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                    <div className="flex flex-col items-end space-y-2 sm:space-y-3">
-                        <span
-                            className={`px-4 py-2 rounded-full text-sm font-medium ${
-                                isCancelled
-                                    ? 'bg-red-100 text-red-800'
-                                    : isActive
-                                    ? 'bg-green-100 text-green-800'
-                                    : now > classEndTime
-                                    ? 'bg-gray-100 text-gray-800'
-                                    : now < oneHourBefore
-                                    ? 'bg-yellow-100 text-yellow-800'
-                                    : 'bg-blue-100 text-blue-800'
-                            }`}
-                        >
-                            {isCancelled 
-                                ? 'Aula Cancelada'
-                                : isActive 
-                                ? 'Check-in Disponível' 
-                                : now > classEndTime
-                                ? 'Encerrada'
-                                : now < oneHourBefore
-                                ? 'Em breve'
-                                : 'Agendada'}
-                        </span>
-                        
-                        {/* Mostrar botão de cancelar aula apenas para aulas do dia */}
-                        {isToday && (
-                            <button
-                                onClick={() => handleCancelClass(class_.id)}
-                                disabled={isCancelled}
-                                className={`px-4 py-2 mt-2 rounded-lg text-white font-medium transition-all duration-200 ${
-                                    isCancelled
-                                        ? 'bg-gray-400 cursor-not-allowed'
-                                        : 'bg-red-500 hover:bg-red-600 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
-                                }`}
-                            >
-                                {isCancelled ? 'Aula cancelada' : 'Cancelar Aula'}
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {isCancelled && (
-                    <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
-                        <p className="text-red-700 flex items-center">
-                            <AlertTriangle className="w-5 h-5 mr-2" />
-                            Esta aula foi cancelada. Entre em contato com o professor para mais informações.
+    return (
+      <div
+        key={class_.id}
+        className={`bg-gradient-to-br ${
+          isCancelled
+            ? 'from-red-50 to-red-100 border-2 border-red-300'
+            : 'from-white to-gray-50'
+        } rounded-xl shadow-md transition-all duration-300 hover:shadow-lg ${
+          isActive && !isCancelled ? 'ring-2 ring-blue-500' : ''
+        }`}
+      >
+        <div className="p-4 sm:p-6">
+          <div className="flex justify-between items-start">
+            <div className="space-y-2 sm:space-y-3">
+              <h3 className="text-xl font-bold text-gray-900">{class_.title}</h3>
+              <div className="space-y-1 sm:space-y-2">
+                <p className="flex items-center text-gray-600">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  {classDate.toLocaleDateString()}
+                </p>
+                <p className="flex items-center text-gray-600">
+                  <Clock className="w-4 h-4 mr-2" />
+                  {classDate.toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })}
+                </p>
+                <p className="flex items-center text-gray-600">
+                  <Timer className="w-4 h-4 mr-2" />
+                  {class_.duration / 60} horas
+                </p>
+                <button
+                  onClick={() => toggleClassStudents(class_.id)}
+                  className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  {class_.class_checkins?.length || 0}/{class_.max_students} vagas
+                  {isExpanded ? (
+                    <ChevronUp className="w-4 h-4 ml-1" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 ml-1" />
+                  )}
+                </button>
+                {isExpanded && (
+                  <div className="mt-2 pl-6 space-y-1">
+                    {class_.class_checkins.length > 0 ? (
+                      class_.class_checkins.map(checkin => (
+                        <p key={checkin.id} className="text-gray-600">
+                          • {checkin.student.name}
                         </p>
-                    </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-500 italic">
+                        Nenhum aluno inscrito
+                      </p>
+                    )}
+                  </div>
                 )}
+              </div>
             </div>
-        </div>
-    );
-})}
 
-                        {classes.length === 0 && (
-                            <div className="text-center py-12 bg-gray-50 rounded-xl">
-                                <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                                <p className="text-gray-600">
-                                    Nenhuma aula disponível no momento.
-                                </p>
-                            </div>
+            <div className="flex flex-col items-end space-y-2 sm:space-y-3">
+              <span
+                className={`px-4 py-2 rounded-full text-sm font-medium ${
+                  isCancelled
+                    ? 'bg-red-100 text-red-800'
+                    : isActive
+                    ? 'bg-green-100 text-green-800'
+                    : now > classEndTime
+                    ? 'bg-gray-100 text-gray-800'
+                    : now < oneHourBefore
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : 'bg-blue-100 text-blue-500'
+                }`}
+              >
+                {isCancelled 
+                  ? 'Aula Cancelada'
+                  : isActive 
+                  ? 'Em Andamento' 
+                  : now > classEndTime
+                  ? 'Encerrada'
+                  : now < oneHourBefore
+                  ? 'Em breve'
+                  : 'Agendada'}
+              </span>
+              
+              {/* Mostrar botão de cancelar aula apenas para aulas do dia */}
+              {isToday && now < classDate && (
+                <button
+                    onClick={() => handleCancelClass(class_.id)}
+                    disabled={isCancelled}
+                    className={`px-4 py-2 mt-2 rounded-lg text-white font-medium transition-all duration-200 ${
+                        isCancelled
+                            ? 'bg-gray-400 cursor-not-allowed'
+                            : 'bg-red-500 hover:bg-red-600 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
+                    }`}
+                >
+                    {isCancelled ? 'Aula cancelada' : 'Cancelar Aula'}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {isCancelled && (
+            <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
+              <p className="text-red-700 flex items-center">
+                <AlertTriangle className="w-5 h-5 mr-2" />
+                Esta aula foi cancelada. Entre em contato com o professor para mais informações.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  })}
+
+              {classes.length === 0 && (
+                <div className="text-center py-12 bg-gray-50 rounded-xl">
+                    <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">
+                      Nenhuma aula disponível no momento.
+                    </p>
+                </div>
                         )}
                     </div>
                 </div>
@@ -1376,15 +1462,16 @@ return (
                         />
                     </div>
                     <div className="mb-4">
-                        <label className="block text-gray-700 font-medium mb-2">Duração (minutos)</label>
-                        <input
-                            type="number"
-                            value={newTraining.duration}
-                            onChange={(e) => setNewTraining({ ...newTraining, duration: parseInt(e.target.value) })}
-                            className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            required
-                        />
-                    </div>
+                      <label className="block text-gray-700 font-medium mb-2">Duração (horas)</label>
+                      <input
+                          type="number"
+                          value={newTraining.duration / 60} // Converte minutos para horas
+                          onChange={(e) => setNewTraining({ ...newTraining, duration: parseFloat(e.target.value) * 60 })}
+                          className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          required
+                          step="0.1" // Permite inserir horas fracionadas (ex: 1.5 horas)
+                      />
+                  </div>
                     <div className="mb-4">
                         <label className="block text-gray-700 font-medium mb-2">Dificuldade</label>
                         <select
@@ -1407,53 +1494,54 @@ return (
                 </form>
 
                 <div className="mb-8 bg-white p-6 rounded-lg shadow-md">
-                    <h2 className="text-2xl font-bold mb-4 text-gray-800">Treinos Cadastrados</h2>
-                    <div className="space-y-4">
-                        {Object.entries(groupedTrainings).map(([weekKey, weekTrainings]) => (
-                            <div key={weekKey} className="bg-gray-50 p-4 rounded-lg">
-                                <button
-                                    onClick={() => toggleWeek(weekKey)}
-                                    className="w-full text-left flex justify-between items-center p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                                >
-                                    <span className="font-semibold text-blue-600">{weekKey}</span>
-                                    <span>{expandedWeeks.includes(weekKey) ? '▲' : '▼'}</span>
-                                </button>
-                                {expandedWeeks.includes(weekKey) && (
-                                    <div className="mt-4 space-y-4">
-                                        {weekTrainings.map((training) => (
-                                            <div
-                                                key={training.id}
-                                                className="p-4 border rounded-lg hover:shadow-md transition-shadow"
-                                            >
-                                                <h3 className="font-bold text-lg text-blue-600">{training.title}</h3>
-                                                <p className="text-gray-600 mb-2 whitespace-pre-line">{training.description}</p>
-                                                <div className="grid grid-cols-3 gap-4 text-sm">
-                                                    <p>Data: {new Date(training.date).toLocaleDateString()}</p>
-                                                    <p>Duração: {training.duration} minutos</p>
-                                                    <p>Dificuldade: {training.difficulty}</p>
-                                                </div>
-                                                <div className="mt-4 flex space-x-2">
-                                                    <button
-                                                        onClick={() => openEditModal(training)}
-                                                        className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors"
-                                                    >
-                                                        Editar
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteTraining(training.id)}
-                                                        className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
-                                                    >
-                                                        Excluir
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                  <h2 className="text-2xl font-bold mb-4 text-gray-800">Treinos Cadastrados</h2>
+                  <div className="space-y-4">
+                      {Object.entries(groupedTrainings).map(([weekKey, weekTrainings]) => (
+                          <div key={weekKey} className="bg-gray-50 p-4 rounded-lg">
+                              <button
+                                  onClick={() => toggleWeek(weekKey)}
+                                  className="w-full text-left flex justify-between items-center p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                              >
+                                  <span className="font-semibold text-blue-600">{weekKey}</span>
+                                  <span>{expandedWeeks.includes(weekKey) ? '▲' : '▼'}</span>
+                              </button>
+                              {expandedWeeks.includes(weekKey) && (
+                                  <div className="mt-4 space-y-4">
+                                      {weekTrainings.map((training) => (
+                                          <div
+                                              key={training.id}
+                                              className="p-4 border rounded-lg hover:shadow-md transition-shadow"
+                                          >
+                                              <h3 className="font-bold text-lg text-blue-600">{training.title}</h3>
+                                              <p className="text-gray-600 mb-2 whitespace-pre-line">{training.description}</p>
+                                              {/* Layout ajustado para mobile */}
+                                              <div className="flex flex-wrap gap-4 text-sm">
+                                                  <p className="flex-1 min-w-[100px]">Data: {new Date(training.date).toLocaleDateString()}</p>
+                                                  <p className="flex-1 min-w-[100px]">Duração: {training.duration / 60} horas</p>
+                                                  <p className="flex-1 min-w-[100px]">Dificuldade: {training.difficulty}</p>
+                                              </div>
+                                              <div className="mt-4 flex space-x-2">
+                                                  <button
+                                                      onClick={() => openEditModal(training)}
+                                                      className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition-colors"
+                                                  >
+                                                      Editar
+                                                  </button>
+                                                  <button
+                                                      onClick={() => handleDeleteTraining(training.id)}
+                                                      className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors"
+                                                  >
+                                                      Excluir
+                                                  </button>
+                                              </div>
+                                          </div>
+                                      ))}
+                                  </div>
+                              )}
+                          </div>
+                      ))}
+                  </div>
+              </div>
 
                 {editingTraining && (
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">

@@ -204,6 +204,11 @@ export default function AlunoDashboard() {
       return;
     }
   
+    const formattedData = data.map(classItem => ({
+      ...classItem,
+      class_checkins: classItem.class_checkins || []
+    }));
+
     // Converter as datas para o formato local
     const formattedClasses = data.map(classItem => ({
       ...classItem,
@@ -211,6 +216,7 @@ export default function AlunoDashboard() {
     }));
   
     setClasses(formattedClasses);
+    setClasses(formattedData);
   };
 
   // Função de check-in
@@ -242,6 +248,53 @@ export default function AlunoDashboard() {
     } else {
       alert('Check-in realizado com sucesso!');
       fetchClasses();
+    }
+  };
+
+  // Função para cancelar o check-in
+  const handleCancelCheckin = async (classId: number) => {
+    try {
+      const confirmCancel = window.confirm('Tem certeza que deseja cancelar seu check-in?');
+      
+      if (!confirmCancel) {
+        return;
+      }
+  
+      const { error } = await supabase
+        .from('class_checkins')
+        .delete()
+        .match({
+          class_id: classId,
+          student_id: user?.id
+        });
+  
+      if (error) {
+        console.error('Erro ao cancelar check-in:', error);
+        alert('Erro ao cancelar check-in: ' + error.message);
+        return;
+      }
+  
+      console.log('Check-in cancelado com sucesso!');
+      alert('Check-in cancelado com sucesso!');
+      
+      // Atualiza o estado local do aluno
+      setClasses(prevClasses => 
+        prevClasses.map(classItem => {
+          if (classItem.id === classId) {
+            return {
+              ...classItem,
+              class_checkins: classItem.class_checkins.filter(
+                checkin => checkin.student_id !== user?.id
+              )
+            };
+          }
+          return classItem;
+        })
+      );
+  
+    } catch (err) {
+      console.error('Erro inesperado ao cancelar check-in:', err);
+      alert('Ocorreu um erro inesperado ao cancelar o check-in');
     }
   };
 
@@ -1090,7 +1143,7 @@ export default function AlunoDashboard() {
           </div>
 
           <div className="grid gap-6">
-            {classes.map((class_) => {
+          {classes.map((class_) => {
               const [year, month, day] = class_.date.split('-').map(Number);
               const [hours, minutes] = class_.time.split(':').map(Number);
               const classDate = new Date(year, month - 1, day, hours, minutes);
@@ -1191,9 +1244,20 @@ export default function AlunoDashboard() {
                         </span>
 
                         {hasCheckedIn ? (
-                          <div className="flex items-center text-green-600">
-                            <CheckCircle className="w-5 h-5 mr-1" />
-                            <span className="font-medium">Check-in realizado</span>
+                          <div className="flex flex-col items-end space-y-2">
+                            <div className="flex items-center text-green-600">
+                              <CheckCircle className="w-5 h-5 mr-1" />
+                              <span className="font-medium">Check-in realizado</span>
+                            </div>
+                            {/* Botão de Cancelar Check-in */}
+                            {now <= classEndTime && !isCancelled && (
+                              <button
+                                onClick={() => handleCancelCheckin(class_.id)}
+                                className="px-4 py-2 rounded-lg text-white font-medium bg-red-500 hover:bg-red-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                              >
+                                Cancelar Check-in
+                              </button>
+                            )}
                           </div>
                         ) : (
                           <button

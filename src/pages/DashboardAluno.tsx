@@ -1246,14 +1246,14 @@ export default function AlunoDashboard() {
                         {hasCheckedIn ? (
                           <div className="flex flex-col items-end space-y-2">
                             <div className="flex items-center text-green-600">
-                              <CheckCircle className="w-5 h-5 mr-1" />
-                              <span className="font-medium">Check-in realizado</span>
+                            <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 mr-1" />
+                              <span className="text-sm sm:text-base font-medium">Check-in realizado</span>
                             </div>
                             {/* Botão de Cancelar Check-in */}
                             {now <= classEndTime && !isCancelled && (
                               <button
                                 onClick={() => handleCancelCheckin(class_.id)}
-                                className="px-4 py-2 rounded-lg text-white font-medium bg-red-500 hover:bg-red-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                                className="px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-lg text-white font-medium bg-red-500 hover:bg-red-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                               >
                                 Cancelar Check-in
                               </button>
@@ -1263,7 +1263,7 @@ export default function AlunoDashboard() {
                           <button
                             onClick={() => handleCheckin(class_.id)}
                             disabled={!isActive || isFull || now > classEndTime || isCancelled}
-                            className={`px-4 py-2 rounded-lg text-white font-medium transition-all duration-200 ${
+                            className={`px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-lg text-white font-medium transition-all duration-200 ${
                               isActive && !isFull && !isCancelled && now <= classEndTime
                                 ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
                                 : 'bg-gray-400 cursor-not-allowed'

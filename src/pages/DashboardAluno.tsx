@@ -219,6 +219,66 @@ export default function AlunoDashboard() {
     setClasses(formattedData);
   };
 
+  useEffect(() => {
+    const channel = supabase
+      .channel('custom-update-channel')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'classes' },
+        (payload) => {
+          console.log('Mudança detectada:', payload);
+          // Atualiza as aulas quando uma mudança é detectada
+          fetchClasses();
+        }
+      )
+      .subscribe();
+
+    // Desinscreve o canal ao desmontar o componente
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('custom-update-channel')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'trainings' },
+        (payload) => {
+          console.log('Mudança detectada:', payload);
+          // Atualiza as aulas quando uma mudança é detectada
+          fetchTrainings();
+        }
+      )
+      .subscribe();
+
+    // Desinscreve o canal ao desmontar o componente
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('custom-update-channel')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notices' },
+        (payload) => {
+          console.log('Mudança detectada:', payload);
+          // Atualiza as aulas quando uma mudança é detectada
+          fetchClasses();
+        }
+      )
+      .subscribe();
+
+    // Desinscreve o canal ao desmontar o componente
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   // Função de check-in
   const handleCheckin = async (classId: number) => {
     const existingCheckin = await supabase
@@ -1261,25 +1321,25 @@ export default function AlunoDashboard() {
                           </div>
                         ) : (
                           <button
-                            onClick={() => handleCheckin(class_.id)}
-                            disabled={!isActive || isFull || now > classEndTime || isCancelled}
-                            className={`px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-lg text-white font-medium transition-all duration-200 ${
-                              isActive && !isFull && !isCancelled && now <= classEndTime
-                                ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
-                                : 'bg-gray-400 cursor-not-allowed'
-                            }`}
-                          >
-                            {isCancelled
-                              ? 'Aula cancelada'
-                              : isFull 
-                              ? 'Aula lotada' 
-                              : now > classEndTime
-                              ? 'Aula encerrada'
-                              : !isActive 
-                              ? 'Aguardando' 
-                              : 'Fazer Check-in'}
-                          </button>
-                        )}
+                          onClick={() => handleCheckin(class_.id)}
+                          disabled={!isActive || isFull || now > classEndTime || isCancelled}
+                          className={`px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-lg text-white font-medium transition-all duration-200 ${
+                            isActive && !isFull && !isCancelled && now <= classEndTime
+                              ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
+                              : 'bg-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          {isCancelled
+                            ? 'Aula cancelada'
+                            : isFull 
+                            ? 'Aula lotada' 
+                            : now > classEndTime
+                            ? 'Aula encerrada'
+                            : !isActive 
+                            ? 'Aguardando' 
+                            : 'Fazer Check-in'}
+                        </button>
+                      )}
                       </div>
                     </div>
 

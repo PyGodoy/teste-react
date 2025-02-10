@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import MyTimes from '../components/MyTimes';
+import NotificationToast from '../components/NotificationToast';
  
 import {
   LineChart,
@@ -62,6 +63,13 @@ interface Notice {
   created_at: string;
 }
 
+interface CustomNotification {
+  id: string;
+  message: string;
+  read: boolean;
+}
+
+
 type PeriodFilter = 'all' | 'week' | 'month' | 'custom';
 type AverageView = 'daily' | 'weekly' | 'monthly';
 type ActiveTab = 'trainings' | 'times' | 'performance' | 'checkin' | 'info';
@@ -72,6 +80,9 @@ export default function AlunoDashboard() {
   const [expandedWeeks, setExpandedWeeks] = useState<string[]>([]);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState<CustomNotification[]>([]);
+  const [showNotification, setShowNotification] = useState(false);
+  const [lastNoticeId, setLastNoticeId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
     // Tenta recuperar a aba salva do localStorage, se não existir usa 'trainings'
     const savedTab = localStorage.getItem('activeTab');
@@ -277,25 +288,63 @@ export default function AlunoDashboard() {
     };
   }, []);
 
-  useEffect(() => {
-    const channel = supabase
-      .channel('custom-update-channel-notices')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'notices' },
-        (payload) => {
-          console.log('Mudança detectada:', payload);
-          // Atualiza as aulas quando uma mudança é detectada
-          fetchClasses();
+useEffect(() => {
+  console.log("Setting up notices channel subscription");
+  const channel = supabase
+    .channel("custom-notify-channel")
+    .on(
+      "postgres_changes",
+      { event: "INSERT", schema: "public", table: "notices" },
+      (payload) => {
+        console.log("New notice received:", payload);
+        if (payload.new) {
+          console.log("Setting showNotification to true");
+          setShowNotification(true);
+          setLastNoticeId(payload.new.id);
+          setNotifications(prev => [
+            ...prev,
+            {
+              id: payload.new.id,
+              message: payload.new.message,
+              read: false,
+            },
+          ]);
         }
-      )
-      .subscribe();
+      }
+    )
+    .subscribe();
 
-    // Desinscreve o canal ao desmontar o componente
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+  return () => {
+    console.log("Cleaning up notices channel subscription");
+    supabase.removeChannel(channel);
+  };
+}, []);
+  
+  
+  // Add this new function to handle notification clicks
+  const handleNotificationClick = () => {
+    console.log("🔔 Clicando na notificação");
+    setShowNotification(false);
+    setActiveTab('info');
+  };
+  
+  // Add this somewhere before the return statement
+  const handleCloseNotification = () => {
+    console.log("🔔 Fechando notificação");
+    setShowNotification(false);
+  };
+  
+  // Add this inside your return statement, right after the opening <div className="min-h-screen...">
+  {showNotification && (
+    <>
+      {console.log("🔔 Renderizando NotificationToast!")}
+      <NotificationToast
+        message="APANAT publicou um novo aviso!"
+        onClose={handleCloseNotification}
+        onClick={handleNotificationClick}
+      />
+    </>
+  )}
 
   // Função de check-in
   const handleCheckin = async (classId: number) => {
@@ -802,6 +851,13 @@ export default function AlunoDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    {showNotification && (
+      <NotificationToast
+        message="APANAT publicou um novo aviso!"
+        onClose={handleCloseNotification}
+        onClick={handleNotificationClick}
+      />
+    )}
   
       {/* Abas de navegação */}
       <div className="bg-white shadow-lg mb-8 border-0">

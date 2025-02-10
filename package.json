@@ -12,6 +12,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.48.1",
     "@types/react-router-dom": "^5.3.3",
+    "framer-motion": "^12.4.2",
     "lucide-react": "^0.344.0",
     "moment-timezone": "^0.5.47",
     "phoenix": "^1.7.19",

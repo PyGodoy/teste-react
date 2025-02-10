@@ -206,6 +206,7 @@ export default function ProfessorDashboard() {
       console.error('Erro ao buscar frequência:', error);
     } else {
       setAttendance(data as AttendanceRecord[]);
+      console.log('Frequência atualizada:', data);
     }
   };
 
@@ -320,6 +321,42 @@ export default function ProfessorDashboard() {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+  
+    console.log("✅ Criando canal de atualizações da frequência...");
+  
+    const insertChannel = supabase.channel('custom-insert-channel')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'attendances' },
+        (payload) => {
+          console.log("🚀 Novo registro de frequência adicionado:", payload);
+          fetchAttendance();
+        }
+      )
+      .subscribe();
+  
+    const updateChannel = supabase.channel('custom-update-channel')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'attendances' },
+        (payload) => {
+          console.log("🔄 Registro de frequência atualizado:", payload);
+          fetchAttendance();
+        }
+      )
+      .subscribe();
+  
+    console.log("📡 Canal de atualização foi criado!");
+  
+    return () => {
+      console.log("❌ Removendo canais de atualização...");
+      supabase.removeChannel(insertChannel);
+      supabase.removeChannel(updateChannel);
+    };
+  }, [user]);
+
  const InfoTab = () => {
     const [notices, setNotices] = useState<{ message: string; created_at: string }[]>([]);
     const [newNotice, setNewNotice] = useState('');
@@ -341,7 +378,7 @@ export default function ProfessorDashboard() {
   
       fetchNotices();
     }, []);
-  
+
     // Função para adicionar avisos
     const handleAddNotice = async () => {
       if (newNotice.trim()) {

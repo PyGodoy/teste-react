@@ -451,103 +451,103 @@ export default function ProfessorDashboard() {
 
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      {/* Seção de Informações */}
-      <div className="rounded-lg bg-gradient-to-br from-blue-50 to-white p-6 shadow-md">
-          <div className="mb-6">
-              <h2 className="flex items-center gap-2 text-2xl font-bold text-blue-600">
-                  <Info className="h-6 w-6" />
-                  Informações da Apanat
-              </h2>
+          {/* Seção do Quadro de Avisos */}
+          <div className="rounded-lg bg-gradient-to-br from-blue-50 to-white p-6 shadow-md">
+              <div className="mb-6">
+                  <h2 className="flex items-center gap-2 text-2xl font-bold text-blue-600">
+                      <Bell className="h-6 w-6" />
+                      Quadro de Avisos
+                  </h2>
+              </div>
+              <div className="space-y-4">
+                  {/* Campo para adicionar novo aviso */}
+                  <div className="flex space-x-2">
+                      <input
+                          type="text"
+                          value={newNotice}
+                          onChange={(e) => setNewNotice(e.target.value)}
+                          className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Adicionar novo aviso..."
+                      />
+                      <button
+                          onClick={handleAddNotice}
+                          className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center"
+                      >
+                          <span>Adicionar</span>
+                      </button>
+                  </div>
+  
+                  {/* Lista de avisos */}
+                  <div className="space-y-4">
+                      {notices.length > 0 ? (
+                          notices.map((notice, index) => (
+                              <div
+                                  key={index}
+                                  className={`p-6 rounded-lg bg-white shadow-sm border-l-4 ${
+                                      isRecent(notice.created_at) ? "border-blue-500" : "border-gray-300"
+                                  } transition-all hover:shadow-md`}
+                              >
+                                  <p className="text-gray-800">{notice.message}</p>
+                                  <p className="text-sm text-gray-500 mt-2">
+                                      {new Date(notice.created_at).toLocaleDateString("pt-BR", {
+                                          day: "2-digit",
+                                          month: "long",
+                                          year: "numeric",
+                                      })}
+                                  </p>
+                              </div>
+                          ))
+                      ) : (
+                          <div className="text-center py-12">
+                              <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                              <p className="text-gray-600">Nenhum aviso no momento.</p>
+                          </div>
+                      )}
+                  </div>
+              </div>
           </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="flex items-center gap-3 p-4 rounded-lg bg-white shadow-sm transition-all hover:shadow-md">
-          <div className="bg-blue-100 p-3 rounded-full shrink-0">
-            <Phone className="h-6 w-6 text-blue-600" />
-                </div>
-              <div>
-                <p className="text-sm text-gray-500">Contato</p>
-                <p className="font-medium">(63) 99215-6443</p>
+  
+          {/* Seção de Informações */}
+          <div className="rounded-lg bg-gradient-to-br from-blue-50 to-white p-6 shadow-md mt-8">
+              <div className="mb-6">
+                  <h2 className="flex items-center gap-2 text-2xl font-bold text-blue-600">
+                      <Info className="h-6 w-6" />
+                      Informações da Apanat
+                  </h2>
               </div>
-                </div>
-        <div className="flex items-start gap-3 p-4 rounded-lg bg-white shadow-sm transition-all hover:shadow-md">
-          <div className="bg-blue-100 p-3 rounded-full shrink-0">
-              <Mail className="h-6 w-6 text-blue-600" />
-            </div>
-            <div className="min-w-0">
-                <p className="text-sm text-gray-500">Email</p>
-                <p className="font-medium break-words">clubeapanat@gmail.com</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-white shadow-sm transition-all hover:shadow-md">
+                      <div className="bg-blue-100 p-3 rounded-full shrink-0">
+                          <Phone className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                          <p className="text-sm text-gray-500">Contato</p>
+                          <p className="font-medium">(63) 99215-6443</p>
+                      </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-4 rounded-lg bg-white shadow-sm transition-all hover:shadow-md">
+                      <div className="bg-blue-100 p-3 rounded-full shrink-0">
+                          <Mail className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div className="min-w-0">
+                          <p className="text-sm text-gray-500">Email</p>
+                          <p className="font-medium break-words">clubeapanat@gmail.com</p>
+                      </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-4 rounded-lg bg-white shadow-sm transition-all hover:shadow-md">
+                      <div className="bg-blue-100 p-3 rounded-full shrink-0">
+                          <MapPin className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                          <p className="text-sm text-gray-500">Endereço</p>
+                          <p className="font-medium">206 Norte, Piscina Colégio Militar</p>
+                          <p className="text-sm text-gray-500">Palmas, TO - 77006244</p>
+                      </div>
+                  </div>
               </div>
-          </div>
-          <div className="flex items-start gap-3 p-4 rounded-lg bg-white shadow-sm transition-all hover:shadow-md">
-            <div className="bg-blue-100 p-3 rounded-full shrink-0">
-              <MapPin className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Endereço</p>
-                <p className="font-medium">206 Norte, Piscina Colégio Militar</p>
-                <p className="text-sm text-gray-500">Palmas, TO - 77006244</p>
-                </div>
-            </div>
           </div>
       </div>
-
-            {/* Seção do Quadro de Avisos */}
-            <div className="rounded-lg bg-gradient-to-br from-blue-50 to-white p-6 shadow-md mt-8">
-                <div className="mb-6">
-                    <h2 className="flex items-center gap-2 text-2xl font-bold text-blue-600">
-                        <Bell className="h-6 w-6" />
-                        Quadro de Avisos
-                    </h2>
-                </div>
-                <div className="space-y-4">
-                    {/* Campo para adicionar novo aviso */}
-                    <div className="flex space-x-2">
-                        <input
-                            type="text"
-                            value={newNotice}
-                            onChange={(e) => setNewNotice(e.target.value)}
-                            className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Adicionar novo aviso..."
-                        />
-                        <button
-                            onClick={handleAddNotice}
-                            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center"
-                        >
-                            <span>Adicionar</span>
-                        </button>
-                    </div>
-
-                    {/* Lista de avisos */}
-                    <div className="space-y-4">
-                      {notices.length > 0 ? (
-                        notices.map((notice, index) => (
-                          <div
-                            key={index}
-                            className={`p-6 rounded-lg bg-white shadow-sm border-l-4 ${
-                              isRecent(notice.created_at) ? "border-blue-500" : "border-gray-300"
-                            } transition-all hover:shadow-md`}
-                          >
-                            <p className="text-gray-800">{notice.message}</p>
-                            <p className="text-sm text-gray-500 mt-2">
-                              {new Date(notice.created_at).toLocaleDateString("pt-BR", {
-                                day: "2-digit",
-                                month: "long",
-                                year: "numeric",
-                              })}
-                            </p>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-12">
-                            <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                            <p className="text-gray-600">Nenhum aviso no momento.</p>
-                        </div>
-                    )}
-                </div>
-                </div>
-            </div>
-        </div>
-    );
+  );
 };
 
   const fetchStudentPerformance = async (studentId: string) => {

@@ -221,6 +221,24 @@ export default function AlunoDashboard() {
 
   useEffect(() => {
     const channel = supabase
+      .channel('custom-checkin-channel-classcheckins')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'class_checkins' },
+        (payload) => {
+          console.log('Novo check-in detectado:', payload);
+          fetchClasses(); // Atualiza a lista de aulas em tempo real
+        }
+      )
+      .subscribe();
+  
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  useEffect(() => {
+    const channel = supabase
       .channel('custom-update-channel-classes')
       .on(
         'postgres_changes',
@@ -800,6 +818,17 @@ export default function AlunoDashboard() {
             Treinos
           </button>
           <button
+            onClick={() => setActiveTab('checkin')}
+            className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+              activeTab === 'checkin'
+                ? 'bg-blue-500 text-white shadow-md'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Calendar className="w-5 h-5 mr-2" />
+            Check-in
+          </button>
+          <button
             onClick={() => setActiveTab('times')}
             className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
               activeTab === 'times'
@@ -820,17 +849,6 @@ export default function AlunoDashboard() {
           >
             <Award className="w-5 h-5 mr-2" />
             Desempenho
-          </button>
-          <button
-            onClick={() => setActiveTab('checkin')}
-            className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-              activeTab === 'checkin'
-                ? 'bg-blue-500 text-white shadow-md'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <Calendar className="w-5 h-5 mr-2" />
-            Check-in
           </button>
           <button
             onClick={() => setActiveTab('info')}

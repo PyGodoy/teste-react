@@ -324,6 +324,46 @@ export default function ProfessorDashboard() {
   useEffect(() => {
     if (!user) return;
   
+    console.log("✅ Criando canal de atualizações para swimming_times...");
+  
+    const insertChannel = supabase.channel('custom-insert-swimming-times')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'swimming_times' },
+        (payload) => {
+          console.log("🚀 Novo tempo de natação adicionado:", payload);
+          if (selectedStudent) {
+            fetchStudentSwimmingTimes(selectedStudent.id);
+          }
+        }
+      )
+      .subscribe();
+  
+    const updateChannel = supabase.channel('custom-update-swimming-times')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'swimming_times' },
+        (payload) => {
+          console.log("🔄 Tempo de natação atualizado:", payload);
+          if (selectedStudent) {
+            fetchStudentSwimmingTimes(selectedStudent.id);
+          }
+        }
+      )
+      .subscribe();
+  
+    console.log("📡 Canal de atualização para tempos de natação foi criado!");
+  
+    return () => {
+      console.log("❌ Removendo canais de atualização...");
+      supabase.removeChannel(insertChannel);
+      supabase.removeChannel(updateChannel);
+    };
+  }, [user, selectedStudent]); // Atualiza sempre que o usuário ou o aluno selecionado mudar
+
+  useEffect(() => {
+    if (!user) return;
+  
     console.log("✅ Criando canal de atualizações da frequência...");
   
     const insertChannel = supabase.channel('custom-insert-channel')
@@ -1129,14 +1169,14 @@ return (
             Treinos
         </button>
         <button
-            onClick={() => setActiveTab('students')}
+            onClick={() => setActiveTab('classes')}
             className={`${
-                activeTab === 'students'
+                activeTab === 'classes'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
         >
-            Gerenciar Alunos
+            Classes
         </button>
         <button
             onClick={() => setActiveTab('attendance')}
@@ -1149,14 +1189,14 @@ return (
             Frequência
         </button>
         <button
-            onClick={() => setActiveTab('classes')}
+            onClick={() => setActiveTab('students')}
             className={`${
-                activeTab === 'classes'
+                activeTab === 'students'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
         >
-            Classes
+            Gerenciar Alunos
         </button>
         <button
             onClick={() => setActiveTab('info')}
@@ -1334,7 +1374,7 @@ return (
 
             <div className="flex flex-col items-end space-y-2 sm:space-y-3">
               <span
-                className={`px-4 py-2 rounded-full text-sm font-medium ${
+                className={`px-3 py-1 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium ${
                   isCancelled
                     ? 'bg-red-100 text-red-800'
                     : isActive
@@ -1360,16 +1400,16 @@ return (
               {/* Mostrar botão de cancelar aula apenas para aulas do dia */}
               {isToday && now < classDate && (
                 <button
-                    onClick={() => handleCancelClass(class_.id)}
-                    disabled={isCancelled}
-                    className={`px-4 py-2 mt-2 rounded-lg text-white font-medium transition-all duration-200 ${
-                        isCancelled
-                            ? 'bg-gray-400 cursor-not-allowed'
-                            : 'bg-red-500 hover:bg-red-600 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
-                    }`}
-                >
-                    {isCancelled ? 'Aula cancelada' : 'Cancelar Aula'}
-                </button>
+                  onClick={() => handleCancelClass(class_.id)}
+                  disabled={isCancelled}
+                  className={`px-3 py-1 md:px-4 md:py-2 mt-2 rounded-lg text-white font-medium text-sm md:text-base transition-all duration-200 ${
+                      isCancelled
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-red-500 hover:bg-red-600 shadow-md hover:shadow-lg transform hover:-translate-y-0.5'
+                  }`}
+              >
+                  {isCancelled ? 'Aula cancelada' : 'Cancelar Aula'}
+              </button>
               )}
             </div>
           </div>

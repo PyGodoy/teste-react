@@ -268,6 +268,14 @@ export default function AlunoDashboard() {
     };
   }, []);
 
+  const saveLastSeenNoticeId = (noticeId: string) => {
+    localStorage.setItem('lastSeenNoticeId', noticeId);
+  };
+  
+  const getLastSeenNoticeId = () => {
+    return localStorage.getItem('lastSeenNoticeId');
+  };
+
   useEffect(() => {
     const channel = supabase
       .channel('custom-update-channel-trainings')
@@ -326,8 +334,13 @@ useEffect(() => {
     console.log("🔔 Clicando na notificação");
     setShowNotification(false);
     setActiveTab('info');
+    
+    // Salva o ID do último aviso visualizado
+    if (lastNoticeId) {
+      saveLastSeenNoticeId(lastNoticeId);
+    }
   };
-  
+
   // Add this somewhere before the return statement
   const handleCloseNotification = () => {
     console.log("🔔 Fechando notificação");
@@ -549,26 +562,47 @@ useEffect(() => {
     }
   };
 
+  const [notices, setNotices] = useState<Notice[]>([]);
+  // Função para buscar avisos
+  const fetchNotices = async () => {
+    const { data, error } = await supabase
+      .from('notices')
+      .select('id, message, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Erro ao buscar avisos:', error);
+    } else if (data) {
+      setNotices(data); // Atualiza o estado com os avisos buscados
+
+      // Verifica se há um novo aviso
+      if (data.length > 0) {
+        const lastNotice = data[0]; // Último aviso publicado
+        const lastSeenNoticeId = getLastSeenNoticeId();
+
+        if (lastSeenNoticeId !== lastNotice.id) {
+          // Se o último aviso visualizado for diferente do último aviso publicado, mostre a notificação
+          setShowNotification(true);
+          setLastNoticeId(lastNotice.id);
+        }
+      }
+    }
+  };
+
+  // Busca os avisos assim que o componente é montado
+  useEffect(() => {
+    fetchNotices();
+  }, []);
+
+  // Atualiza o último aviso visualizado quando o aluno acessa a aba de informações
+  useEffect(() => {
+    if (lastNoticeId) {
+      saveLastSeenNoticeId(lastNoticeId);
+    }
+  }, [lastNoticeId]);
+
   const InfoTab = () => {
-    const [notices, setNotices] = useState<Notice[]>([]);
-
-    useEffect(() => {
-        const fetchNotices = async () => {
-            const { data, error } = await supabase
-                .from('notices')
-                .select('message, created_at')
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.error('Erro ao buscar avisos:', error);
-            } else {
-                setNotices(data as Notice[]);
-            }
-        };
-
-        fetchNotices();
-    }, []);
-
+    
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Seção de Avisos */}

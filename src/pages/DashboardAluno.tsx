@@ -296,37 +296,61 @@ export default function AlunoDashboard() {
     };
   }, []);
 
-useEffect(() => {
-  console.log("Setting up notices channel subscription");
-  const channel = supabase
-    .channel("custom-notify-channel")
-    .on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "notices" },
-      (payload) => {
-        console.log("New notice received:", payload);
-        if (payload.new) {
-          console.log("Setting showNotification to true");
-          setShowNotification(true);
-          setLastNoticeId(payload.new.id);
-          setNotifications(prev => [
-            ...prev,
-            {
-              id: payload.new.id,
-              message: payload.new.message,
-              read: false,
-            },
-          ]);
+  useEffect(() => {
+    console.log("Setting up notices channel subscription");
+  
+    // Defina o canal
+    const channel = supabase
+      .channel("custom-notify-channel")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notices" },
+        (payload) => {
+          console.log("New notice received:", payload);
+  
+          if (payload.new) {
+            console.log("New notice payload:", payload.new);
+  
+            // Atualiza o estado `notifications` com o novo aviso
+            setNotifications(prev => [
+              ...prev,
+              {
+                id: payload.new.id,
+                message: payload.new.message,
+                read: false,
+              },
+            ]);
+  
+            // Atualiza o estado `notices` com o novo aviso
+            setNotices(prevNotices => [
+              {
+                message: payload.new.message,
+                created_at: payload.new.created_at,
+              },
+              ...prevNotices, // Mantém os avisos antigos
+            ]);
+  
+            // Garante que a notificação seja exibida sempre que um novo aviso for recebido
+            setShowNotification(true);
+            setLastNoticeId(payload.new.id);
+          }
         }
-      }
-    )
-    .subscribe();
-
-  return () => {
-    console.log("Cleaning up notices channel subscription");
-    supabase.removeChannel(channel);
-  };
-}, []);
+      )
+      .subscribe((status, err) => {
+        if (status === 'SUBSCRIBED') {
+          console.log("Successfully subscribed to notices channel");
+        } else if (err) {
+          console.error("Error subscribing to notices channel:", err);
+        }
+      });
+  
+    // Função de limpeza para remover o canal quando o componente for desmontado
+    return () => {
+      console.log("Cleaning up notices channel subscription");
+      supabase.removeChannel(channel);
+    };
+  }, []); // O 
+  
   
   
   // Add this new function to handle notification clicks

@@ -39,7 +39,7 @@ export default function Login() {
         throw new Error('Por favor, insira seu email');
       }
 
-      let { data, error } = await supabase.auth.resetPasswordForEmail(email);
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim());
 
       if (error) {
         console.error('Erro ao resetar senha:', error);

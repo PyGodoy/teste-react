@@ -40,7 +40,7 @@ export default function Login() {
       }
 
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
-        redirectTo: "https://apanattreinamento.vercel.app/reset-password",
+        redirectTo: "https://apanattreinamento.vercel.app/login"
       });
 
       if (error) {

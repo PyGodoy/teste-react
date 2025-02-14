@@ -12,8 +12,6 @@ export default function Login() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetSuccess, setResetSuccess] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const signIn = useAuthStore((state) => state.signIn);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,32 +54,6 @@ export default function Login() {
       console.error('Erro ao resetar senha:', err);
       setError(err instanceof Error ? err.message : 'Erro ao enviar email de recuperação. Tente novamente.');
       setResetSuccess(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
-
-    try {
-      if (newPassword !== confirmPassword) {
-        throw new Error('As senhas não coincidem.');
-      }
-
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-
-      if (error) {
-        throw error;
-      }
-
-      setResetSuccess(true);
-      setError('');
-    } catch (err) {
-      console.error('Erro ao redefinir senha:', err);
-      setError(err instanceof Error ? err.message : 'Erro ao redefinir senha.');
     } finally {
       setIsLoading(false);
     }

@@ -4,6 +4,7 @@ import { useAuthStore } from './store/authStore';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import ResetPassword from './pages/ResetPassword';
 
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
         <Route path="/register" element={!user ? <Register /> : <Navigate to="/dashboard" />} />
         <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/login" />} />
         <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     </BrowserRouter>
   );

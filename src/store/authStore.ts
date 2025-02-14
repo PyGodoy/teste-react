@@ -95,7 +95,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   
       const profile = profiles[0];
   
-      if (email.trim() === 'godoyvitorio99@gmail.com') {
+      if (email.trim() === 'clubeapanat@gmail.com') {
         console.log('Email do professor detectado, definindo role como professor');
         profile.role = 'professor';
       }

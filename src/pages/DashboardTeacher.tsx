@@ -522,7 +522,7 @@ export default function ProfessorDashboard() {
                       </div>
                       <div>
                           <p className="text-sm text-gray-500">Contato</p>
-                          <p className="font-medium">(63) 99215-6443</p>
+                          <p className="font-medium">(63) 99139-8265</p>
                       </div>
                   </div>
                   <div className="flex items-start gap-3 p-4 rounded-lg bg-white shadow-sm transition-all hover:shadow-md">

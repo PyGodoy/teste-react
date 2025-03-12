@@ -33,6 +33,7 @@ interface UserInfo {
   id: string;
   email: string;
   name: string;
+  student_type?: 'Mensalista' | 'Gympass' | 'Bolsista'; // Adicione esta linha
 }
 
 interface Checkin {
@@ -232,7 +233,8 @@ export default function ProfessorDashboard() {
         class_checkins (
           id,
           student_id,
-          checked_in_at
+          checked_in_at,
+          student:student_id (id, name, email, student_type)
         )
       `)
       .order('date', { ascending: true })
@@ -1355,20 +1357,22 @@ return (
                   )}
                 </button>
                 {isExpanded && (
-                  <div className="mt-2 pl-6 space-y-1">
-                    {class_.class_checkins.length > 0 ? (
-                      class_.class_checkins.map(checkin => (
+                <div className="mt-2 pl-6 space-y-1">
+                  {class_.class_checkins.length > 0 ? (
+                    class_.class_checkins.map(checkin => {
+                      const studentType = checkin.student.student_type; // Supondo que o tipo de aluno esteja no perfil
+                      const typeAbbreviation = studentType === 'Mensalista' ? 'Men' : studentType === 'Gympass' ? 'Gy' : 'Bol';
+                      return (
                         <p key={checkin.id} className="text-gray-600">
-                          • {checkin.student.name}
+                          • {checkin.student.name} - {typeAbbreviation}
                         </p>
-                      ))
-                    ) : (
-                      <p className="text-gray-500 italic">
-                        Nenhum aluno inscrito
-                      </p>
-                    )}
-                  </div>
-                )}
+                      );
+                    })
+                  ) : (
+                    <p className="text-gray-500 italic">Nenhum aluno inscrito</p>
+                  )}
+                </div>
+              )}
               </div>
             </div>
 

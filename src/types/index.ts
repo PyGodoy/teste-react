@@ -14,6 +14,7 @@ export interface Profile {
   avatar_url?: string | null;
   created_at?: string;
   updated_at?: string;
+  student_type: string;
 }
 
 export interface Training {

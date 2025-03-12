@@ -257,7 +257,7 @@ export default function ProfessorDashboard() {
     )];
     const { data: studentsData } = await supabase
       .from('profiles')
-      .select('id, name, email')
+      .select('id, name, email, student_type')
       .in('id', studentIds);
   
     const professorsMap = new Map(
@@ -281,7 +281,8 @@ export default function ProfessorDashboard() {
         student: {
           id: checkin.student_id,
           email: studentsMap.get(checkin.student_id)?.email || '',
-          name: studentsMap.get(checkin.student_id)?.name || 'Aluno'
+          name: studentsMap.get(checkin.student_id)?.name || 'Aluno',
+          student_type: studentsMap.get(checkin.student_id)?.student_type || 'N/A' // Aqui garante que student_type seja definido
         }
       }))
     }));
@@ -1360,7 +1361,10 @@ return (
                   {class_.class_checkins.length > 0 ? (
                     class_.class_checkins.map(checkin => {
                       const studentType = checkin.student.student_type; // Supondo que o tipo de aluno esteja no perfil
-                      const typeAbbreviation = studentType === 'Mensalista' ? 'Men' : studentType === 'Gympass' ? 'Gy' : 'Bol';
+                      const typeAbbreviation = 
+                        studentType === 'Mensalista' ? 'Men' : 
+                        studentType === 'Gympass' ? 'Gy' : 
+                        studentType === 'Bolsista' ? 'Bol' : 'N/A';
                       return (
                         <p key={checkin.id} className="text-gray-600">
                           • {checkin.student.name} - {typeAbbreviation}

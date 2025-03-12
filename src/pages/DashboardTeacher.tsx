@@ -1360,9 +1360,19 @@ return (
                   <div className="mt-2 pl-6 space-y-1">
                     {class_.class_checkins.length > 0 ? (
                       class_.class_checkins.map(checkin => {
-                        const studentType = checkin.student.student_type || 'N/A'; // Garantindo que nunca será undefined/null
+                        const fullName = checkin.student.name || "Aluno";
+                        const nameParts = fullName.split(" ");
 
-                        // Definição das cores baseadas no tipo do aluno
+                        // Lista de preposições que indicam que devemos pegar só o primeiro nome
+                        const prepositions = ["de", "da", "do", "das", "dos"];
+
+                        // Verifica se o segundo nome está na lista de preposições
+                        const formattedName = nameParts.length > 1 && prepositions.includes(nameParts[1].toLowerCase())
+                          ? nameParts[0] // Pega só o primeiro nome
+                          : nameParts.slice(0, 2).join(" "); // Pega os dois primeiros nomes
+
+                        const studentType = checkin.student.student_type || 'N/A';
+
                         const typeStyles = {
                           Mensalista: "text-blue-600 font-semibold",
                           Gympass: "text-green-600 font-semibold",
@@ -1370,18 +1380,16 @@ return (
                           "N/A": "text-gray-500 italic",
                         };
 
-                        // Pegando a classe CSS correta
                         const typeClass = typeStyles[studentType] || "text-gray-600";
 
-                        // Abreviação do tipo
                         const typeAbbreviation = 
                           studentType === 'Mensalista' ? 'Men' : 
                           studentType === 'Gympass' ? 'Gy' : 
                           studentType === 'Bolsista' ? 'Bol' : 'N/A';
 
                         return (
-                          <p key={checkin.id} className={`text-gray-600`}>
-                            • {checkin.student.name} - <span className={typeClass}>{typeAbbreviation}</span>
+                          <p key={checkin.id} className="text-gray-600">
+                            • {formattedName} - <span className={typeClass}>{typeAbbreviation}</span>
                           </p>
                         );
                       })

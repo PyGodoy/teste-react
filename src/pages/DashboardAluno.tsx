@@ -141,28 +141,32 @@ export default function AlunoDashboard() {
   function StudentName({ studentId }: StudentNameProps) {
     const [studentName, setStudentName] = useState<string | null>(null);
     
-    // Cache para armazenar os nomes dos alunos
     const [cache, setCache] = useState<Record<string, string>>({});
   
     useEffect(() => {
       const fetchNames = async () => {
-        // Se o nome do aluno já estiver no cache, apenas retorna ele
         if (cache[studentId]) {
           setStudentName(cache[studentId]);
           return;
         }
   
-        // Caso contrário, faz a requisição
         const names = await fetchStudentNames([studentId]);
-        const name = names[0]?.name || studentId;
+        const fullName = names[0]?.name || "Aluno";
   
-        // Armazena o nome no cache
-        setCache((prevCache) => ({ ...prevCache, [studentId]: name }));
-        setStudentName(name);
+        // Lógica para formatar o nome
+        const nameParts = fullName.split(" ");
+        const prepositions = ["de", "da", "do", "das", "dos"];
+        
+        const formattedName = nameParts.length > 1 && prepositions.includes(nameParts[1].toLowerCase())
+          ? nameParts[0]  // Exibe apenas o primeiro nome se a segunda palavra for uma preposição
+          : nameParts.slice(0, 2).join(" "); // Exibe os dois primeiros nomes
+  
+        setCache((prevCache) => ({ ...prevCache, [studentId]: formattedName }));
+        setStudentName(formattedName);
       };
   
       fetchNames();
-    }, [studentId, cache]); // Dependência de cache para atualizar quando necessário
+    }, [studentId, cache]);
   
     return <span>{studentName || 'Carregando...'}</span>;
   }

@@ -1357,25 +1357,39 @@ return (
                   )}
                 </button>
                 {isExpanded && (
-                <div className="mt-2 pl-6 space-y-1">
-                  {class_.class_checkins.length > 0 ? (
-                    class_.class_checkins.map(checkin => {
-                      const studentType = checkin.student.student_type; // Supondo que o tipo de aluno esteja no perfil
-                      const typeAbbreviation = 
-                        studentType === 'Mensalista' ? 'Men' : 
-                        studentType === 'Gympass' ? 'Gy' : 
-                        studentType === 'Bolsista' ? 'Bol' : 'N/A';
-                      return (
-                        <p key={checkin.id} className="text-gray-600">
-                          • {checkin.student.name} - {typeAbbreviation}
-                        </p>
-                      );
-                    })
-                  ) : (
-                    <p className="text-gray-500 italic">Nenhum aluno inscrito</p>
-                  )}
-                </div>
-              )}
+                  <div className="mt-2 pl-6 space-y-1">
+                    {class_.class_checkins.length > 0 ? (
+                      class_.class_checkins.map(checkin => {
+                        const studentType = checkin.student.student_type || 'N/A'; // Garantindo que nunca será undefined/null
+
+                        // Definição das cores baseadas no tipo do aluno
+                        const typeStyles = {
+                          Mensalista: "text-blue-600 font-semibold",
+                          Gympass: "text-green-600 font-semibold",
+                          Bolsista: "text-orange-600 font-semibold",
+                          "N/A": "text-gray-500 italic",
+                        };
+
+                        // Pegando a classe CSS correta
+                        const typeClass = typeStyles[studentType] || "text-gray-600";
+
+                        // Abreviação do tipo
+                        const typeAbbreviation = 
+                          studentType === 'Mensalista' ? 'Men' : 
+                          studentType === 'Gympass' ? 'Gy' : 
+                          studentType === 'Bolsista' ? 'Bol' : 'N/A';
+
+                        return (
+                          <p key={checkin.id} className={`text-gray-600`}>
+                            • {checkin.student.name} - <span className={typeClass}>{typeAbbreviation}</span>
+                          </p>
+                        );
+                      })
+                    ) : (
+                      <p className="text-gray-500 italic">Nenhum aluno inscrito</p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

@@ -121,6 +121,9 @@ export default function AlunoDashboard() {
     }
   };
   const [expandedClasses, setExpandedClasses] = useState<number[]>([]);
+  const [studentType, setStudentType] = useState<'Mensalista' | 'Gympass' | 'Bolsista' | null>(null);
+  const [showCheckinModal, setShowCheckinModal] = useState(false);
+  const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
 
   const toggleClassStudents = (classId: number) => {
     setExpandedClasses(prev => 
@@ -413,6 +416,46 @@ export default function AlunoDashboard() {
       alert('Check-in realizado com sucesso!');
       fetchClasses();
     }
+  };
+
+  const handleConfirmCheckin = async (classId: number) => {
+    if (!studentType) {
+      alert('Por favor, selecione o tipo de aluno.');
+      return;
+    }
+  
+    // Salvar o tipo de aluno no perfil do aluno
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ student_type: studentType })
+      .eq('id', user?.id);
+  
+    if (profileError) {
+      console.error('Erro ao salvar tipo de aluno:', profileError);
+      alert('Erro ao salvar tipo de aluno');
+      return;
+    }
+  
+    // Realizar o check-in normal
+    const { error: checkinError } = await supabase
+      .from('class_checkins')
+      .insert([
+        {
+          class_id: classId, // Usa o classId passado como parâmetro
+          student_id: user?.id,
+        },
+      ]);
+  
+    if (checkinError) {
+      console.error('Erro ao fazer check-in:', checkinError);
+      alert('Erro ao fazer check-in');
+    } else {
+      alert('Check-in realizado com sucesso!');
+      fetchClasses();
+    }
+  
+    // Fechar o modal
+    setShowCheckinModal(false);
   };
 
   // Função para cancelar o check-in
@@ -1452,8 +1495,11 @@ export default function AlunoDashboard() {
                             )}
                           </div>
                         ) : (
-                          <button
-                          onClick={() => handleCheckin(class_.id)}
+                        <button
+                          onClick={() => {
+                            setSelectedClassId(class_.id); // Armazena o classId da aula
+                            setShowCheckinModal(true); // Abre o modal de seleção do tipo de aluno
+                          }}
                           disabled={!isActive || isFull || now > classEndTime || isCancelled}
                           className={`px-3 py-1.5 sm:px-4 sm:py-2 text-sm rounded-lg text-white font-medium transition-all duration-200 ${
                             isActive && !isFull && !isCancelled && now <= classEndTime
@@ -1471,7 +1517,7 @@ export default function AlunoDashboard() {
                             ? 'Aguardando' 
                             : 'Fazer Check-in'}
                         </button>
-                      )}
+                        )}
                       </div>
                     </div>
 
@@ -1509,6 +1555,49 @@ export default function AlunoDashboard() {
         </div>
       )}
       {activeTab === 'info' && <InfoTab />}
+
+      {/* Modal de seleção do tipo de aluno */}
+      {showCheckinModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-md w-full max-w-md">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">Você é aluno:</h2>
+            <div className="space-y-4">
+              <button
+                onClick={() => setStudentType('Mensalista')}
+                className={`w-full p-3 rounded-lg text-left ${studentType === 'Mensalista' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'}`}
+              >
+                Mensalista
+              </button>
+              <button
+                onClick={() => setStudentType('Gympass')}
+                className={`w-full p-3 rounded-lg text-left ${studentType === 'Gympass' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'}`}
+              >
+                Gympass
+              </button>
+              <button
+                onClick={() => setStudentType('Bolsista')}
+                className={`w-full p-3 rounded-lg text-left ${studentType === 'Bolsista' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700'}`}
+              >
+                Bolsista
+              </button>
+            </div>
+            <div className="mt-6 flex justify-end space-x-2">
+              <button
+                onClick={() => setShowCheckinModal(false)}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleConfirmCheckin(selectedClassId!)}
+                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

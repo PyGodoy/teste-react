@@ -233,8 +233,7 @@ export default function ProfessorDashboard() {
         class_checkins (
           id,
           student_id,
-          checked_in_at,
-          student:student_id (id, name, email, student_type)
+          checked_in_at
         )
       `)
       .order('date', { ascending: true })

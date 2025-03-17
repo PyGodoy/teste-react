@@ -1388,7 +1388,7 @@ export default function AlunoDashboard() {
               const classDate = new Date(year, month - 1, day, hours, minutes);
               const now = new Date();
               const oneHourBefore = new Date(classDate);
-              oneHourBefore.setHours(oneHourBefore.getHours() - 1);
+              oneHourBefore.setHours(oneHourBefore.getHours() - 3);
               const classEndTime = new Date(classDate);
               classEndTime.setMinutes(classEndTime.getMinutes() + class_.duration);
 
